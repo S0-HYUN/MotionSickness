@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 class Load_Data() :
     def __init__(self, args) :
         datalist = os.listdir(args.data_path)
-        datalist = sorted(datalist)[:3]
+        datalist = sorted(datalist)
 
         ch_num = args.channel_num + 1
 
@@ -51,7 +51,7 @@ class Load_Data() :
             #--------------------------#
             #---# save single data #---#
             #--------------------------#
-            output_dir = "/opt/workspace/soxo/output/Single/Class" + str(args.class_num) + "/Expt" + str(expt) + "/day" + str(day)
+            output_dir = str(args.output_path) + "/Single/Class" + str(args.class_num) + "/Expt" + str(expt) + "/day" + str(day)
             filename = "subj" + str(subj).zfill(2)
             file_path_name = output_dir + "/" + filename + ".npz"
             if not os.path.isfile(file_path_name) :
@@ -62,7 +62,7 @@ class Load_Data() :
             #-------------------------#
             x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=args.test_size, shuffle=True, random_state=1004)
             
-            output_dir = "/opt/workspace/soxo/output/Split" + str(args.test_size) + "/Class" + str(args.class_num) + "/Expt" + str(expt) + "/day" + str(day)
+            output_dir = str(args.output_path) + "/Split" + str(args.test_size) + "/Class" + str(args.class_num) + "/Expt" + str(expt) + "/day" + str(day)
             filename = "subj" + str(subj).zfill(2) + "_train"
             save_npzfile(output_dir, filename, x_train, y_train)
             
@@ -99,11 +99,12 @@ def main() :
     parser.add_argument("--test_size", type=float, default=0.5); 
     parser.add_argument("--lower_freq", type=float, default=0.5)
     parser.add_argument("--high_freq", type=float, default=50); 
-    parser.add_argument("--score_list", type=list, default=[3,7]);  # [3] -> 0,1,2,3 /4,5,6,7,8,9     # [3,7] -> 0,1,2,3 / 4,5,6 / 7,8,9
-    parser.add_argument("--data_path", type=str, default='/opt/workspace/soxo/Motionsickness_Data/PREPROCESSED_DATA/');
+    parser.add_argument("--score_list", type=list, default=[1,6]);  # [3] -> 0,1,2,3 /4,5,6,7,8,9     # [3,7] -> 0,1,2,3 / 4,5,6 / 7,8,9    # [1,6] -> 0,1 / 2,3,4,5 / 6,7,8,9
+    parser.add_argument("--data_path", type=str, default='/opt/workspace/MS_DATA/PREPROCESSED_DATA/')
     parser.add_argument("--channel_num", type=int, default=28)
     parser.add_argument("--class_num", type=int, default=3)
-    parser.add_argument("--one_bundle", type=int, default=int(1500/2))
+    parser.add_argument("--one_bundle", type=int, default=int(1500/2)) # 500hz -> 3초에 1500행
+    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS/output')
     args = parser.parse_args()
     Load_Data(args)
 
