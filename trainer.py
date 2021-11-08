@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader # data를 batch size만큼 나눠주기 위함
+from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 import numpy as np
 import pandas as pd
@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 import os
 
 class trainer:
-    def __init__(self, info, model, epoch, lr, optimizer, weight_decay = None, criterion = 'CrossEntropyLoss'):
+    def __init__(self, args, model, epoch, lr, optimizer, weight_decay = None, criterion = 'CrossEntropyLoss'):
             self.writer = SummaryWriter(log_dir='./runs/lr{}_wd{}'.format(lr, weight_decay))
             ##tensorboard --logdir=C:/Users/soso/Desktop/tensorboard/runs --port 6006
             optimizer = getattr(torch.optim, optimizer)
@@ -24,7 +24,7 @@ class trainer:
             self.criterion = criterion()
             self.lr = lr
             self.wd = weight_decay
-            self.channel_num = info['channel_num']
+            self.channel_num = args.channel_num
 
     def train(self, data, data_v, batch_size, shuffle=True, interval=1000):
         # train_data, valid_data = torch.utils.data.random_split(data, [int(len(data) * 0.8), (len(data) - int(len(data) * 0.8))]) # data.split(split_ratio = 0.8)

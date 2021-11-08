@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import mne
 from sklearn.model_selection import train_test_split
+from utils import *
 
 class Load_Data() :
     def __init__(self, args) :
@@ -71,13 +72,6 @@ class Load_Data() :
 
     def __getitem__(self) :
         return
-
-def createFolder(directory) :
-    try : 
-        if not os.path.exists(directory) :
-            os.makedirs(directory)
-    except OSError :
-        print("Error: Creating directory" + directory)
 
 def save_npzfile(out_dir, filename, x, y) :
     createFolder(out_dir)
