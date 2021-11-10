@@ -22,12 +22,15 @@ class Args:
         parser.add_argument("--one_bundle", type=int, default=int(1500/2))
         parser.add_argument("--channel_num", type=int, default=28)
         parser.add_argument("--class_num", type=int, default=3)
-        parser.add_argument("--expt", type=int, default="1")  # 1:오전 2:오후
+        parser.add_argument("--expt", type=int, default="1", help="1:오전,2:오후")  
+        
         # parser.add_argument("--val_list", type=list, default=[2]) # 필요없어보임
         parser.add_argument("--test_subj", type=int, default=13)
+        parser.add_argument("--remove_subj", type=list, default=[])
         parser.add_argument("--test_size", type=float, default=0.5); 
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS/runs")
+        parser.add_argument('--device', default=0, help="cpu or gpu number")
         args = parser.parse_args()
 
         return args

@@ -25,7 +25,7 @@ def main():
     df = pd.DataFrame(columns = ['test_subj', 'lr', 'wd', 'acc', 'f1', 'loss']); idx = 0
     
     train_list = data_preprocesesing(list(range(1,24)), args.remove_subj, [args.test_subj])
-    
+
     data = data_loader.Dataset(args, args.path, train_list, [args.test_subj], data_type = 'train')
     data_valid = data_loader.Dataset(args, args.path, None, [args.test_subj], data_type = 'valid')
     data_test = data_loader.Dataset(args, args.path, train_list, [args.test_subj], data_type = 'test')

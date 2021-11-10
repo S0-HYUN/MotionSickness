@@ -23,3 +23,8 @@ def gpu_checking() :
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
     return device
+
+def data_preprocesesing(train, remove, test_list) :
+    train_list = [x for x in train if x not in (test_list)]
+    train_list = [x for x in train_list if x not in (remove)]
+    return train_list
