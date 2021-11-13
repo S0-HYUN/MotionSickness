@@ -7,26 +7,26 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 import numpy as np
+from utils import *
 
 class Dataset(Dataset) :
-    def __init__(self, args, path, t_list, v_list, data_type = 'train'):
-        if data_type == 'train' :
-            self.data = self.make_training(args, path, t_list, v_list)
+    def __init__(self, args):
+        print("\nData Loading...")
+        train_list = data_preprocesesing(list(range(1,24)), args.remove_subj, [args.test_subj])
+        if args.mode == "train":
+            self.data = self.make_training(args, args.path, train_list)
             self.x = torch.tensor(self.data[0]) # [18961, 750, 28]
             self.y = torch.tensor(self.data[1]).mean(-1) # [18961]
 
-        elif data_type == 'valid' :
-            self.data_t = self.make_valid(args, path, v_list)
-            self.x = torch.tensor(self.data_t[0])
-            self.y = torch.tensor(self.data_t[1]).mean(-1)
+            self.data_v = self.make_valid(args, [args.test_subj])
 
-        elif data_type == 'test' :
-            self.data_test = self.make_test(args, path, v_list)
+        elif args.mode == 'test' :
+            self.data_test = self.make_test(args, [args.test_subj])
             self.x = torch.tensor(self.data_test[0])
             self.y = torch.tensor(self.data_test[1]).mean(-1)
         
         else :
-            raise
+            raise TypeError
 
     def __len__(self):
         return len(self.x)
@@ -53,31 +53,38 @@ class Dataset(Dataset) :
 
         return data_name
 
-    def make_training(self, args, path, list_, list_v_):
+    def make_training(self, args, list_):
         '''
         make training data stack
         input   : args, path, list_(train list), list_v(valid list)
         output  : train list stack
+
+        all of Day1 + (1 - test_ratio) * Day2  
         '''
         total_list_x = []
         total_list_y = []
 
-        for sub in list_ :            
-            for d in range(2) :
-                data_name = self.make_name("Single", None, args.class_num, args.expt, (d+1), str(sub), ".npz")
-                o_list = np.load(path + data_name) # "subj01_day1_train.npz"
-                total_list_x.append(o_list['x'])
-                total_list_y.append(o_list['y'])
+        for sub in list_: ################################################### 이게 최선인가여.. 맘에 안들어.
+            data_name = self.make_name("Single", None, args.class_num, args.expt, 1, str(sub), ".npz")
+            o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
-        # for sub in list_v_ :
+            data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 2, str(sub), "_train.npz")
+            o_list = np.load(args.path + data_name) # "subj01_train.npz"
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+
+            data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 2, str(sub), "_val.npz")
+            o_list = np.load(args.path + data_name) # "subj01_val.npz"
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+
+        # for sub in list_t_ :
         #     data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_train.npz")
         #     o_list = np.load(path + data_name)
-        #     total_list_x.append(o_list['x'])
-        #     total_list_y.append(o_list['y'])
+        #     total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
             
         return np.vstack(total_list_x), np.vstack(total_list_y)
     
-    def make_valid(self, args, path, list_):
+    def make_valid(self, args, list_):
         '''
         make valid data stack
         input   : args, path, list_(valid list)
@@ -87,15 +94,13 @@ class Dataset(Dataset) :
         total_list_y = []
         
         for sub in list_ :
-            data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_val.npz")
-
-            o_list = np.load(path + data_name)
-            total_list_x.append(o_list['x'])
-            total_list_y.append(o_list['y'])
+            data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_train.npz")
+            o_list = np.load(args.path + data_name)
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
         
         return np.vstack(total_list_x), np.vstack(total_list_y)
 
-    def make_test(self, args, path, list_):
+    def make_test(self, args, list_):
         '''
         make test data stack
         input   : args, path, list_(test list)
@@ -107,7 +112,7 @@ class Dataset(Dataset) :
         for sub in list_ :            
             data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 2, str(sub), "_val.npz")
 
-            o_list = np.load(path + data_name)
+            o_list = np.load(args.path + data_name)
             total_list_x.append(o_list['x'])
             total_list_y.append(o_list['y'])
 

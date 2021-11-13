@@ -68,7 +68,7 @@ class Load_Data() :
             save_npzfile(output_dir, filename, x_train, y_train)
             
             filename = "subj" + str(subj).zfill(2) + "_val"
-            save_npzfile(output_dir, filename, x_val, y_val)
+            save_npzfile(output_dir, filename, x_val, np.nan)
 
     def __getitem__(self) :
         return
@@ -98,7 +98,7 @@ def main() :
     parser.add_argument("--channel_num", type=int, default=28)
     parser.add_argument("--class_num", type=int, default=3)
     parser.add_argument("--one_bundle", type=int, default=int(1500/2)) # 500hz -> 3초에 1500행
-    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS/output')
+    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS/ALoutput')
     args = parser.parse_args()
     Load_Data(args)
 

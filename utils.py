@@ -1,6 +1,9 @@
 import os
 import shutil
 import torch
+import random
+import numpy as np
+import torch.backends.cudnn as cudnn
 
 def createFolder(directory) :
     ### create folder ###
@@ -28,3 +31,17 @@ def data_preprocesesing(train, remove, test_list) :
     train_list = [x for x in train if x not in (test_list)]
     train_list = [x for x in train_list if x not in (remove)]
     return train_list
+
+def fix_random_seed(args):
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    # Multi-GPU
+    if args.device == "multi":
+        torch.cuda.manual_seed_all(args.seed)
+    # Single-GPU
+    else:
+        torch.cuda.manual_seed(args.seed)
+    cudnn.benchmark = False  # If you want to set randomness, cudnn.benchmark = False
+    cudnn.deterministic = True  # If you want to set randomness, cudnn.benchmark = True
+    print(f"[Control randomness]\nseed: {args.seed}\n")
