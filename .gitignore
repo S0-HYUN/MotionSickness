@@ -1,2 +1,5 @@
 /__pycache__
 /testdata.csv
+/deep-active-learning
+/libact
+/pytorch_active_learning
