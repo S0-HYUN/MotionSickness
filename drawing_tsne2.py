@@ -7,7 +7,7 @@ from MulticoreTSNE import MulticoreTSNE as TSNE
 import torch
 # from tsnecuda import TSNE
 from utils_drawing import *
-
+from utils import *
 
 x_raw = []
 y_raw = []
