@@ -3,3 +3,6 @@
 /deep-active-learning
 /libact
 /pytorch_active_learning
+/runs/
+/train/
+/param/

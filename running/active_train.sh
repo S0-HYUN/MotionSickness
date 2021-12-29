@@ -1,0 +1,1 @@
+python main3_deep.py -sch=step --step_size=1000 --gamma=0.1
