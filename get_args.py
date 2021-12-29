@@ -29,6 +29,7 @@ class Args:
         parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS/Files_scale/')
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS/runs")
+        parser.add_argument("--save_folder", type=str, default="/opt/workspace/xohyun/MS/train/")
         parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS/train/")
         parser.add_argument("--load_path", type=str, default="/opt/workspace/xohyun/MS/train/")
 
