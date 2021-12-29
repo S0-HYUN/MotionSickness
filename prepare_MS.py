@@ -5,7 +5,10 @@ import pandas as pd
 import mne
 from sklearn.model_selection import train_test_split
 from utils import *
+<<<<<<< HEAD
 from sklearn.preprocessing import MinMaxScaler
+=======
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
 
 class Load_Data() :
     def __init__(self, args) :
@@ -38,6 +41,7 @@ class Load_Data() :
                 o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else 1)
             elif args.class_num == 3:
                 o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else (2 if x >= args.score_list[1] else 1))
+<<<<<<< HEAD
             
             #---# visualization of each channel (check for trend) #---#
             # from matplotlib import pyplot as plt
@@ -47,16 +51,23 @@ class Load_Data() :
 
             #---# changing scale and to_numpy #---#
             o_data_f.iloc[:,:-1] = o_data_f.iloc[:,:-1].apply(lambda x : x / 100)
+=======
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
 
             o_data = o_data_f.to_numpy()            # 다시 numpy 배열로
             cut = len(o_data) % args.one_bundle          # 나머지 부분 잘라내기 cut = len(o_data) % (one_bundle * ch_num) 여기 꼭 확인
 
             o_data = o_data[:-int(cut)].reshape(-1, args.one_bundle, ch_num)
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
             #---# bandpass filtering #---#
             b, t, c = o_data.shape
             o_data = mne.filter.filter_data(o_data.reshape(-1, ch_num).T, sfreq = 250, l_freq = args.lower_freq, h_freq = args.high_freq, picks = np.s_[1:-2]).T.reshape(b, t, c)
             
+<<<<<<< HEAD
             x = o_data[:,:,:-1];    y = o_data[:,:,-1] # x.shape -> (512, 750, 28)
      
             #---# Use of MinMaxScaler #---# -> 이런 거 하지말래
@@ -67,16 +78,29 @@ class Load_Data() :
 
             #--------------------------#
             #---# save single data #---#  
+=======
+            x = o_data[:,:,:-1];    y = o_data[:,:,-1]
+            
+            #--------------------------#
+            #---# save single data #---#
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
             #--------------------------#
             output_dir = str(args.output_path) + "/Single/Class" + str(args.class_num) + "/Expt" + str(expt) + "/day" + str(day)
             filename = "subj" + str(subj).zfill(2)
             file_path_name = output_dir + "/" + filename + ".npz"
+<<<<<<< HEAD
             check_and_save(output_dir, filename, x, y)
             
+=======
+            if not os.path.isfile(file_path_name) :
+                save_npzfile(output_dir, filename, x, y)
+
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
             #-------------------------#
             #---# save split data #---#
             #-------------------------#
             x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=args.test_size, shuffle=True, random_state=1004)
+<<<<<<< HEAD
             output_dir = str(args.output_path) + "/Split" + str(args.test_size) + "/Class" + str(args.class_num) + "/Expt" + str(expt) + "/day" + str(day)
             if os.path.isdir(output_dir):
                 print("Split datas are already exist!"); break
@@ -86,10 +110,20 @@ class Load_Data() :
             
             filename = "subj" + str(subj).zfill(2) + "_val"
             check_and_save(output_dir, filename, x_val, y_val)
+=======
+            
+            output_dir = str(args.output_path) + "/Split" + str(args.test_size) + "/Class" + str(args.class_num) + "/Expt" + str(expt) + "/day" + str(day)
+            filename = "subj" + str(subj).zfill(2) + "_train"
+            save_npzfile(output_dir, filename, x_train, y_train)
+            
+            filename = "subj" + str(subj).zfill(2) + "_val"
+            save_npzfile(output_dir, filename, x_val, np.nan)
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
 
     def __getitem__(self) :
         return
 
+<<<<<<< HEAD
 def check_and_save(out_dir, filename, x, y):
     if not os.path.isfile(filename):
         save_npzfile(out_dir, filename, x, y)
@@ -98,6 +132,10 @@ def check_and_save(out_dir, filename, x, y):
 
 def save_npzfile(out_dir, filename, x, y) :
     create_folder(out_dir)
+=======
+def save_npzfile(out_dir, filename, x, y) :
+    createFolder(out_dir)
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
     save_dict = {
             "x" : x,
             "y" : y,
@@ -113,7 +151,11 @@ def naming(df):
 
 def main() :
     parser = argparse.ArgumentParser(); 
+<<<<<<< HEAD
     parser.add_argument("--test_size", type=float, default=0.5); 
+=======
+    parser.add_argument("--test_size", type=float, default=0.8); 
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
     parser.add_argument("--lower_freq", type=float, default=0.5)
     parser.add_argument("--high_freq", type=float, default=50); 
     parser.add_argument("--score_list", type=list, default=[1,6]);  # [3] -> 0,1,2,3 /4,5,6,7,8,9     # [3,7] -> 0,1,2,3 / 4,5,6 / 7,8,9    # [1,6] -> 0,1 / 2,3,4,5 / 6,7,8,9
@@ -121,7 +163,11 @@ def main() :
     parser.add_argument("--channel_num", type=int, default=28)
     parser.add_argument("--class_num", type=int, default=3)
     parser.add_argument("--one_bundle", type=int, default=int(1500/2)) # 500hz -> 3초에 1500행
+<<<<<<< HEAD
     parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS/Files_scale')
+=======
+    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS/ALoutput')
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
     args = parser.parse_args()
     Load_Data(args)
 

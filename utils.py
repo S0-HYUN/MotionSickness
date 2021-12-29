@@ -5,14 +5,20 @@ import random
 import numpy as np
 import torch.backends.cudnn as cudnn
 
+<<<<<<< HEAD
 def create_folder(directory) :
     #---# create folder #---#
+=======
+def createFolder(directory) :
+    ### create folder ###
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
     try : 
         if not os.path.exists(directory) :
             os.makedirs(directory)
     except OSError :
         print("Error: Creating directory" + directory)
 
+<<<<<<< HEAD
 def prepare_folder(path_list) :
     #---# remove and create folder if aleady exist #---#
     for pl in path_list :
@@ -20,6 +26,16 @@ def prepare_folder(path_list) :
             print(f"[Remove folder] {pl}")
             shutil.rmtree(pl)
         create_folder(pl) # create foler
+=======
+def prepare_folder(param_path, runs_path) :
+    ### remove and create folder if aleady exist###
+    if os.path.isdir(param_path) :
+        print("[Remove folder]")
+        shutil.rmtree(param_path)
+    if os.path.isdir(runs_path) :
+        shutil.rmtree(runs_path)
+    createFolder(param_path)
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
 
 def gpu_checking() :
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -43,4 +59,8 @@ def fix_random_seed(args):
         torch.cuda.manual_seed(args.seed)
     cudnn.benchmark = False  # If you want to set randomness, cudnn.benchmark = False
     cudnn.deterministic = True  # If you want to set randomness, cudnn.benchmark = True
+<<<<<<< HEAD
     print(f"[Control randomness]\nseed: {args.seed}")
+=======
+    print(f"[Control randomness]\nseed: {args.seed}\n")
+>>>>>>> 72fde0adfb169b7aca75faba81f54913d760ae5c
