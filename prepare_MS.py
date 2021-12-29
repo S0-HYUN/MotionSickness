@@ -78,8 +78,6 @@ class Load_Data() :
             #-------------------------#
             x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=args.test_size, shuffle=True, random_state=1004)
             output_dir = str(args.output_path) + "/Split" + str(args.test_size) + "/Class" + str(args.class_num) + "/Expt" + str(expt) + "/day" + str(day)
-            if os.path.isdir(output_dir):
-                print("Split datas are already exist!"); break
             
             filename = "subj" + str(subj).zfill(2) + "_train"
             check_and_save(output_dir, filename, x_train, y_train)
@@ -121,7 +119,7 @@ def main() :
     parser.add_argument("--channel_num", type=int, default=28)
     parser.add_argument("--class_num", type=int, default=3)
     parser.add_argument("--one_bundle", type=int, default=int(1500/2)) # 500hz -> 3초에 1500행
-    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS/Files_scale')
+    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale')
     args = parser.parse_args()
     Load_Data(args)
 
