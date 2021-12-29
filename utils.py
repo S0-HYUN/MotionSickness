@@ -19,7 +19,7 @@ def prepare_folder(path_list) :
         if os.path.isdir(pl) :
             print(f"[Remove folder] {pl}")
             shutil.rmtree(pl)
-        create_folder(pl)
+        create_folder(pl) # create foler
 
 def gpu_checking() :
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
