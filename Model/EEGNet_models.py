@@ -26,7 +26,7 @@ class EEGNet(nn.Module):
             nn.BatchNorm2d(16),
             nn.ELU(),
             nn.AvgPool2d(kernel_size=(1, 8)),
-            nn.Dropout(p=0.25),
+            nn.Dropout(p=0.2),
             )
     
         self.convnet.eval()
@@ -67,11 +67,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     
-    model = EEGNet(2, 32, 200) # n_classes, n_channel, n_timewindow
+    model = EEGNet(3, 28, 750) # n_classes, n_channel, n_timewindow
     # pred = model(torch.zeros(50, 1, 20, 250))
     # print(model)
-    # from pytorch_model_summary import summary
-
-    # print(summary(model, torch.rand((1, 1, 32, 200)), show_input=False))
+    
+    from pytorch_model_summary import summary
+    print(summary(model, torch.rand((1, 1, 28, 750)), show_input=False))
     # model input = torch.rand((1,1,32,200))
     # batch size, channel, eeg electrodes, time window 
