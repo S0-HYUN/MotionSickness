@@ -34,10 +34,10 @@ class Load_Data() :
             o_data_f.reset_index(drop = True, inplace = True)                   # 인덱스 재설정 0부터~~
 
             #---# set class #---#
-            if args.class_num == 2:
-                o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else 1)
-            elif args.class_num == 3:
-                o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else (2 if x >= args.score_list[1] else 1))
+            # if args.class_num == 2:
+            #     o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else 1)
+            # elif args.class_num == 3:
+            #     o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else (2 if x >= args.score_list[1] else 1))
             
             #---# visualization of each channel (check for trend) #---#
             # from matplotlib import pyplot as plt
@@ -114,12 +114,12 @@ def main() :
     parser.add_argument("--test_size", type=float, default=0.5); 
     parser.add_argument("--lower_freq", type=float, default=0.5)
     parser.add_argument("--high_freq", type=float, default=50); 
-    parser.add_argument("--score_list", type=list, default=[0,4]);  # [3] -> 0,1,2,3 /4,5,6,7,8,9     # [3,7] -> 0,1,2,3 / 4,5,6 / 7,8,9    # [1,6] -> 0,1 / 2,3,4,5 / 6,7,8,9
+    parser.add_argument("--score_list", type=list, default=[1,6]); #[0,4] # [3] -> 0,1,2,3 /4,5,6,7,8,9     # [3,7] -> 0,1,2,3 / 4,5,6 / 7,8,9    # [1,6] -> 0,1 / 2,3,4,5 / 6,7,8,9
     parser.add_argument("--data_path", type=str, default='/opt/workspace/MS_DATA/PREPROCESSED_DATA/')
     parser.add_argument("--channel_num", type=int, default=28)
     parser.add_argument("--class_num", type=int, default=3)
     parser.add_argument("--one_bundle", type=int, default=int(1500/2)) # 500hz -> 3초에 1500행
-    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale')
+    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_raw_original')
     args = parser.parse_args()
     Load_Data(args)
 
