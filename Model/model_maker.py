@@ -11,7 +11,7 @@ class ModelMaker:
         self.args_class = args_class
         args = args_class.args
         self.flag = 0 
-        create_folder(args.save_path)
+        # create_folder(args.save_path) # 필요없음
     
         self.device = gpu_checking()
         self.model = self.__build_model(args)

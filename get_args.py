@@ -25,12 +25,13 @@ class Args:
         #---# Model #---#
         parser.add_argument("--model", type=str, default="EEGNet") #DeepConvNet, ShallowConvNet, EEGNet
 
-        #---# Path #---#
+        #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
         parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS/Files_scale/')
-        parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS/param")
-        parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS/runs")
-        parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS/train/")
-        parser.add_argument("--load_path", type=str, default="/opt/workspace/xohyun/MS/train/")
+        parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
+        parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
+        parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
+        parser.add_argument("--save_folder", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
+        parser.add_argument("--load_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
 
         #---# Train #---#
 
@@ -73,7 +74,7 @@ class Args:
             parser.add_argument("--remove_subj", type=list, default=[1,2,4,14,16,17,19])
         else:
             parser.add_argument("--remove_subj", type=list, default=[4,8,11,17]) 
-        parser.add_argument("--test_subj", type=int, default=18)
+        parser.add_argument("--test_subj", type=int, default=17)
         parser.add_argument("--test_size", type=float, default=0.5); # 0.05
         # parser.add_argument("-")
     
@@ -85,18 +86,14 @@ class Args:
         return args
 
     def set_save_path(self):
-        # if self.args.mode == "train":
-        #     create_folder(self.args.save_path)
-        create_folder(self.args.save_path)
-        # sub_dir = len(os.listdir(self.args.save_path)) + 1
-        # dir_name = os.path.join(self.args.save_path, str(sub_dir), str(self.args.test_subj))
+        save_dir = os.path.join(self.args.save_folder, str(self.args.test_subj))
+        create_folder(save_dir)
         
-        dir_name = os.path.join(self.args.save_path, str(self.args.test_subj))
-
         if self.args.mode == "train":
-            prepare_folder([dir_name])
-        self.args.save_path = dir_name
-        print(f"=== save_path : [{self.args.save_path}] ===")
+            self.args.save_path = os.path.join(save_dir, str(len(os.listdir(save_dir))+1))
+            create_folder(self.args.save_path)
+            print(f"=== save_path : [{self.args.save_path}] ===")
 
     def get_load_path(self):
-        self.args.load_path = os.path.join(self.args.load_path, str(self.args.test_subj))
+        save_pth = os.path.join(self.args.load_path, str(self.args.test_subj))
+        self.args.load_path = os.path.join(save_pth, str(len(os.listdir(save_pth))))
