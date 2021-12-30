@@ -26,15 +26,15 @@ data_x = np.sum(data_x, axis=1)
 data_y = np.mean(data_y, axis=1)
 
 #---# choose label #---#
-x_df = pd.DataFrame(data_x)
-y_df = pd.DataFrame(data_y, columns=['label'])
+# x_df = pd.DataFrame(data_x)
+# y_df = pd.DataFrame(data_y, columns=['label'])
 
-choose_idx = y_df['label'].isin([5.0,6.0])
-y_df = y_df.loc[choose_idx]
-x_df = x_df.loc[choose_idx]
-# print(x_df)
-# print("\n", y_df)
-data_x = x_df.to_numpy()
-data_y = y_df.to_numpy()
+# choose_idx = y_df['label'].isin([5.0,6.0])
+# y_df = y_df.loc[choose_idx]
+# x_df = x_df.loc[choose_idx]
+# # print(x_df)
+# # print("\n", y_df)
+# data_x = x_df.to_numpy()
+# data_y = y_df.to_numpy()
 
 visualizer(data_x, data_y)
