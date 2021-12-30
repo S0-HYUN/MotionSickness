@@ -34,6 +34,7 @@ class ModelMaker:
             self.args_class.get_load_path()
             print(f"{args.load_path}에서 pretrained_model을 부르옵니다아ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ")           
             model = pretrained_model(args.load_path) #load_path
+
         return model
 
 def write_pickle(path, data):
@@ -52,6 +53,7 @@ def pretrained_model(save_path):
     except FileNotFoundError:
         raise FileNotFoundError
     save_path, model = set_pretrained_path(save_path, model)
+    model.load_state_dict
     # model = load_model(model, save_path)
     return model
 

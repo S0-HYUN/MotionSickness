@@ -20,6 +20,8 @@ from utils import gpu_checking
 from collections import defaultdict
 import wandb
 
+from utils_drawing import visualizer
+
 class TrainMaker:
     def __init__(self, args, model, data, data_v=None):
             self.args = args
@@ -146,20 +148,24 @@ class TrainMaker:
             self.writer.add_scalar('Valid/Acc', acc_v, e)
             self.writer.flush()
 
-            wandb.log({"loss": epoch_loss,
-                        "acc": acc,
-                        "f1":f1,
-                        "vloss": loss_v,
-                        "vacc": acc_v,
-                        "vf1":f1_v,
-                        # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
-            })
-            self.scheduler.step()
+            # wandb.log({"loss": epoch_loss,
+            #             "acc": acc,
+            #             "f1":f1,
+            #             "vloss": loss_v,
+            #             "vacc": acc_v,
+            #             "vf1":f1_v,
+            #             # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
+            # })
+            # self.scheduler.step()
 
         # return acc, f1, cm, epoch_loss
         return f1_v, acc_v, cm_v, loss_v
 
     def evaluation(self, data, interval=1000):
+        flag = list(self.model._modules)[-1]
+        final_layer = self.model._modules.get(flag)
+        activated_features = FeatureExtractor(final_layer) #############################
+
         data_loader = DataLoader(data, batch_size=self.args.batch_size)
 
         with torch.no_grad(): # gradient 안함
@@ -171,6 +177,7 @@ class TrainMaker:
             true_label = None
             valid_loss = 0
             
+            test_embeds = torch.zeros((0,3))
             for idx, data in enumerate(data_loader):
                 x, y = data
                 true_label = y.numpy()
@@ -196,6 +203,11 @@ class TrainMaker:
                     pred_label_acc = np.concatenate((pred_label_acc, pred_label), axis=None)
                     true_label_acc = np.concatenate((true_label_acc, true_label), axis=None)
 
+                #---# for t-sne #---#
+                # embeds = torch.mean(activated_features.features, dim=0).view(-1,3)
+                embeds = activated_features.features
+                test_embeds = torch.cat((test_embeds, embeds), dim=0)
+
                 self.cal = Calculate()
                 log = self.cal.calculator(metrics=self.args.metrics, loss=loss, y_true=y, y_pred=pred_label, acc_count=True)
                 
@@ -214,6 +226,11 @@ class TrainMaker:
             else:
                 print('\nEpoch Test, f1:{:.4f}, acc:{:.4f}'.format(f1, acc))
             # print(cm)
+            
+            if self.args.mode == "test":
+                create_folder("./features")
+                np.savez(f"./features/subj{self.args.test_subj:2d}", test_embeds, true_label_acc)
+                # visualizer(test_embeds, true_label_acc)
 
         return f1, acc, cm, valid_loss
 

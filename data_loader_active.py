@@ -87,21 +87,21 @@ class Dataset(Dataset) :
         total_list_x = []
         total_list_y = []
 
-        # for sub in list_: ################################################### 이게 최선인가여.. 맘에 안들어.
-        #     for d in range(1,3): 
-        #         data_name = self.make_name("Single", None, args.class_num, args.expt, d, str(sub), ".npz")
-        #         o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
-        #         total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+        for sub in list_: ################################################### 이게 최선인가여.. 맘에 안들어.
+            for d in range(1,3): 
+                data_name = self.make_name("Single", None, args.class_num, args.expt, d, str(sub), ".npz")
+                o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
+                total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
         # data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
         # o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
         # total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
-        for sub in list_: ###################################################
-            for d in range(1,3): 
-                data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, d, str(sub), "_val.npz")
-                o_list = np.load(args.path + data_name)
-                total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+        # for sub in list_: ###################################################
+        #     for d in range(1,3): 
+        #         data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, d, str(sub), "_val.npz")
+        #         o_list = np.load(args.path + data_name)
+        #         total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
         return np.vstack(total_list_x), np.vstack(total_list_y)
     
@@ -155,14 +155,15 @@ class Dataset(Dataset) :
         # o_list = np.load(args.path + data_name)
         # total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
-        # for sub in list_ :
-        #     data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_train.npz")
-        #     o_list = np.load(args.path + data_name)
-        #     total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
-        for sub in list_ : 
-            data_name = self.make_name("Single", None, args.class_num, args.expt, 1, str(sub), ".npz")
+        for sub in list_ :
+            data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_train.npz")
             o_list = np.load(args.path + data_name)
             total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+
+        # for sub in list_ : 
+        #     data_name = self.make_name("Single", None, args.class_num, args.expt, 1, str(sub), ".npz")
+        #     o_list = np.load(args.path + data_name)
+        #     total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
         
         return np.vstack(total_list_x), np.vstack(total_list_y)
 
@@ -176,7 +177,7 @@ class Dataset(Dataset) :
         total_list_y = []
 
         for sub in list_ :            
-            # data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 2, str(sub), "_val.npz")
+            data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_val.npz")
             data_name = self.make_name("Single", None, args.class_num, args.expt, 2, str(sub), ".npz")
             o_list = np.load(args.path + data_name)
             total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])

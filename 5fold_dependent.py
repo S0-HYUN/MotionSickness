@@ -52,6 +52,7 @@ def main():
         # f1_v, acc_v, cm_v, loss_v = trainer.evaluation(data_test)
 
         df.loc[idx] = [args.test_subj, args.lr, args.wd, acc_v, f1_v, loss_v.cpu().numpy()]
+        create_folder("./csvs")
         df.to_csv(f'./csvs/Dependent_5fold_results_{args.model}_subj{args.test_subj}_batchsampler_parameter.csv', header = True, index = False)
         idx += 1
 

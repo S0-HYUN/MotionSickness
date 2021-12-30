@@ -16,9 +16,9 @@ def create_folder(directory) :
 def prepare_folder(path_list) :
     #---# remove and create folder if aleady exist #---#
     for pl in path_list :
-        if os.path.isdir(pl) :
-            print(f"[Remove folder] {pl}")
-            shutil.rmtree(pl)
+        # if os.path.isdir(pl) :
+        #     print(f"[Remove folder] {pl}")
+        #     shutil.rmtree(pl)
         create_folder(pl)
 
 def gpu_checking() :
@@ -44,3 +44,10 @@ def fix_random_seed(args):
     cudnn.benchmark = False  # If you want to set randomness, cudnn.benchmark = False
     cudnn.deterministic = True  # If you want to set randomness, cudnn.benchmark = True
     print(f"[Control randomness]\nseed: {args.seed}")
+
+class FeatureExtractor():
+    features =  None
+    def __init__(self, m):
+        self.hook = m.register_forward_hook(self.hook_fn)
+    def hook_fn(self, module, input, output):
+        self.features = output.detach().cpu()

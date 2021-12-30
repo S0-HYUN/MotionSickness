@@ -74,7 +74,7 @@ class Args:
             parser.add_argument("--remove_subj", type=list, default=[1,2,4,14,16,17,19])
         else:
             parser.add_argument("--remove_subj", type=list, default=[4,8,11,17]) 
-        parser.add_argument("--test_subj", type=int, default=17)
+        parser.add_argument("--test_subj", type=int, default=13)
         parser.add_argument("--test_size", type=float, default=0.5); # 0.05
         # parser.add_argument("-")
     
@@ -82,7 +82,6 @@ class Args:
         parser.add_argument('--device', default=2, help="cpu or gpu number")
 
         args = parser.parse_args()
-
         return args
 
     def set_save_path(self):

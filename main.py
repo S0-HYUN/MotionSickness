@@ -2,7 +2,7 @@ from sys import stderr
 from scipy.signal.windows.windows import exponential
 from torch.optim import optimizer
 import torch
-import data_loader
+import data_loader_active
 import trainer
 import os
 import pandas as pd
@@ -26,9 +26,9 @@ def main():
     df = pd.DataFrame(columns = ['test_subj', 'lr', 'wd', 'acc', 'f1', 'loss']); idx = 0
 
     # Load data
-    data = data_loader.Dataset(args, phase="train")
-    data_valid = data_loader.Dataset(args, phase="valid")
-    data_test = data_loader.Dataset(args, phase="test")
+    data = data_loader_active.Dataset(args, phase="train")
+    data_valid = data_loader_active.Dataset(args, phase="valid")
+    data_test = data_loader_active.Dataset(args, phase="test")
     
     # Build model
     model = ModelMaker(args_class).model
@@ -37,7 +37,7 @@ def main():
     trainer = TrainMaker(args, model, data, data_valid)
     
     # Prepare folder
-    prepare_folder(args.param_path, args.runs_path)
+    prepare_folder([args.param_path, args.runs_path])
 
     if args.mode == "train":
         trainer.training() # fitting
@@ -57,8 +57,8 @@ def main():
     acc_v, f1_v, cm_v, loss_v = trainer2.prediction(data_test, args.batch_size, test=True)
     '''
 
-    df.loc[idx] = [args.test_subj, args.lr, args.wd, acc_v, f1_v, loss_v.cpu().numpy()]
-    df.to_excel('results_{}_subj{}.xlsx'.format(args.model, args.test_subj), header = True, index = False)
+    # df.loc[idx] = [args.test_subj, args.lr, args.wd, acc_v, f1_v, loss_v.cpu().numpy()]
+    # df.to_excel('results_{}_subj{}.xlsx'.format(args.model, args.test_subj), header = True, index = False)
 
 if __name__ == "__main__" :
     main()
