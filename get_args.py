@@ -26,7 +26,7 @@ class Args:
         parser.add_argument("--model", type=str, default="EEGNet") #DeepConvNet, ShallowConvNet, EEGNet
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
-        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS/Files_scale/')
+        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_0_123_456789/')
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
         parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")

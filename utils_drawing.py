@@ -16,12 +16,12 @@ def visualizer(data, label, batch=None, dataset=None, tde=-1, title=None):
     plt.figure(figsize=(12, 8))
     print('T-SNE finished!')
     # label = list(label.squeeze(1))
-    scatter = plt.scatter(x_embedded[:, 0], x_embedded[:, 1], s=3, c=label, cmap='rainbow')
+    scatter = plt.scatter(x_embedded[:, 0], x_embedded[:, 1], s=10, c=label, cmap='rainbow')
     plt.legend(handles=scatter.legend_elements()[0], labels=[str(i) for i in range(len(set(label)))])
     # plt.legend(handles=scatter.legend_elements()[0], labels=[str(i) for i in range(5,7)])
     # plt.show()
     plt.title(f"Experiment{expt}")
-    plt.savefig(f"./plots/tsne_expt{expt}_all_features_1000_2.png")
+    plt.savefig(f"./plots/tsne_expt{expt}_all_features_newrange_1000.png")
     
     # if batch is not None:
     #     plt.savefig('visualization/{}.png'.format(batch), bbox_inches='tight')
