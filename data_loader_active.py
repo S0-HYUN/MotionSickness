@@ -1,4 +1,5 @@
 from operator import getitem
+from numpy.core.shape_base import vstack
 from numpy.lib.function_base import average
 import torch
 import torch.nn as nn
@@ -39,7 +40,7 @@ class Dataset(Dataset) :
 
         self.x = torch.tensor(self.data[0])
         self.y = torch.tensor(self.data[1]).mean(-1)
-        
+        print(self.y.shape)
         self.in_weights = make_weights_for_balanced_classes(self.y)
 
         # self.x = torch.sum(self.x, axis=1)

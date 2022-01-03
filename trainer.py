@@ -62,7 +62,7 @@ class TrainMaker:
 
         # data_loader = DataLoader(self.data, batch_size=self.args.batch_size)
         # data_loader = self.data.data_loader_maker(self.args, shuffle, mode="train")
-
+        
         for e in tqdm(range(self.epoch)):
             epoch_loss = 0
             self.model.train()
@@ -230,7 +230,7 @@ class TrainMaker:
             if self.args.mode == "test":
                 create_folder("./features")
                 np.savez(f"./features/subj{self.args.test_subj:2d}", test_embeds, true_label_acc)
-                # visualizer(test_embeds, true_label_acc)
+            
 
         return f1, acc, cm, valid_loss
 
