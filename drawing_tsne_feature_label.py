@@ -10,11 +10,11 @@ from utils_drawing import *
 from utils import *
 import pandas as pd
 
-data = np.load(f"/opt/workspace/xohyun/MS_codes/features/subj 1.npz")
+data = np.load(f"/opt/workspace/xohyun/MS_codes/features_EEGNet_10/original_subj01_epoch10.npz")
 x_raw = data['arr_0']; y_raw = data['arr_1']
 
 for i in range(2,24):
-    data = np.load(f"/opt/workspace/xohyun/MS_codes/features/subj{i:2d}.npz")
+    data = np.load(f"/opt/workspace/xohyun/MS_codes/features_EEGNet_10/original_subj{str(i).zfill(2)}_epoch10.npz")
     # x_raw = torch.cat((x_raw, data['arr_0']))
     x_raw = np.concatenate((x_raw, data['arr_0']))
     y_raw = np.concatenate((y_raw, data['arr_1']))

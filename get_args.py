@@ -27,6 +27,7 @@ class Args:
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
         parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_0_123_456789/')
+        # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789/')
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
         parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
@@ -64,8 +65,8 @@ class Args:
 
         parser.add_argument("--metrics", type=list, default=["loss", "acc"])
 
-        parser.add_argument("--batch_size", type=int, default=32)              #512
-        parser.add_argument("--epoch", type=int, default=100)                 #3000
+        parser.add_argument("--batch_size", type=int, default=64)              #512
+        parser.add_argument("--epoch", type=int, default=1000)                 #3000
         parser.add_argument("--one_bundle", type=int, default=int(1500/2))
         parser.add_argument("--channel_num", type=int, default=28)
         parser.add_argument("--class_num", type=int, default=3)

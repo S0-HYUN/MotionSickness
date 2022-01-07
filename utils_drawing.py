@@ -21,7 +21,7 @@ def visualizer(data, label, batch=None, dataset=None, tde=-1, title=None):
     # plt.legend(handles=scatter.legend_elements()[0], labels=[str(i) for i in range(5,7)])
     # plt.show()
     plt.title(f"Experiment{expt}")
-    plt.savefig(f"./plots/tsne_expt{expt}_all_features_newrange_1000.png")
+    plt.savefig(f"./plots/tsne_expt{expt}_all_features_newrange_10_original.png")
     
     # if batch is not None:
     #     plt.savefig('visualization/{}.png'.format(batch), bbox_inches='tight')

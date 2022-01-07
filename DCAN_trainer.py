@@ -24,48 +24,104 @@ from utils_drawing import visualizer
 
 class TrainMaker:
     def __init__(self, args, model, data, data_v=None):
-            self.args = args
-            self.model = model
-            self.data = data
-            if data_v:
-                self.data_v = data_v
-            self.history = defaultdict(list)
-            self.writer = SummaryWriter(log_dir='./runs/lr{}_wd{}'.format(self.args.lr, self.args.wd))
-            
-            self.optimizer = getattr(torch.optim, self.args.optimizer)
-            self.optimizer = self.optimizer(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
+        self.args = args
+        self.model = model
+        self.data = data
+        if data_v:
+            self.data_v = data_v
+        self.history = defaultdict(list)
+        self.writer = SummaryWriter(log_dir='./runs/lr{}_wd{}'.format(self.args.lr, self.args.wd))
+        
+        self.optimizer = getattr(torch.optim, self.args.optimizer)
+        self.optimizer = self.optimizer(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
 
-            # self.optimizer = self.args.optimizer
-            # self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=500, gamma=0.1)
-            self.scheduler = self.__set_scheduler(args, self.optimizer)
-            
-            # criterion = getattr(torch.nn, self.criterion)
-            self.criterion = self.__set_criterion(self.args.criterion)
-            
-            self.epoch = self.args.epoch
-            self.lr = self.args.lr
-            self.wd = self.args.wd
-            self.channel_num = self.args.channel_num
-            self.device = gpu_checking()
-            self.history_mini_batch = defaultdict(list)
-            # if args.mode == "train":
-            #     self.trainer = self.__make_trainer(args=args,
-            #                                         model=self.model,
-            #                                         data=data,
-            #                                         criterion=self.criterion,
-            #                                         optimizer=self.optimizer)          
+        # self.optimizer = self.args.optimizer
+        # self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=500, gamma=0.1)
+        self.scheduler = self.__set_scheduler(args, self.optimizer)
+        
+        # criterion = getattr(torch.nn, self.criterion)
+        self.criterion = self.__set_criterion(self.args.criterion)
+        
+        self.epoch = self.args.epoch
+        self.lr = self.args.lr
+        self.wd = self.args.wd
+        self.channel_num = self.args.channel_num
+        self.device = gpu_checking()
+        self.history_mini_batch = defaultdict(list)
+        # if args.mode == "train":
+        #     self.trainer = self.__make_trainer(args=args,
+        #                                         model=self.model,
+        #                                         data=data,
+        #                                         criterion=self.criterion,
+        #                                         optimizer=self.optimizer)
+
+        # add layer
+        self.classifier_layer = nn.Linear(2048, self.args.class_num)
+        # feature residual layer: two fully connected layers
+        residual_fc1 = nn.Linear(2048, 2048)
+        residual_bn1 = nn.BatchNorm1d(2048)
+        residual_fc2 = nn.Linear(2048, 128)
+        residual_bn2 = nn.BatchNorm1d(128)
+        residual_fc3 = nn.Linear(128, 2048)
+        self.classifier_layer.weight.data.normal_(0, 0.01)
+        self.classifier_layer.bias.data.fill_(0.0)
+        residual_fc1.weight.data.normal_(0, 0.005)
+        residual_fc1.bias.data.fill_(0.1)
+        residual_fc2.weight.data.normal_(0, 0.005)
+        residual_fc2.bias.data.fill_(0.1)
+        residual_fc3.weight.data.normal_(0, 0.005)
+        residual_fc3.bias.data.fill_(0.1)
+        self.feature_residual_layer = nn.Sequential(residual_fc2, nn.ReLU(), residual_fc3)
+
+        # class residual layer: two fully connected layers
+        residual_fc22 = nn.Linear(self.classifier_layer.out_features, self.classifier_layer.out_features)
+        residual_bn22 = nn.BatchNorm1d(self.classifier_layer.out_features)
+        residual_fc23 = nn.Linear(self.classifier_layer.out_features, self.classifier_layer.out_features)
+        residual_fc22.weight.data.normal_(0, 0.005)
+        residual_fc22.bias.data.fill_(0.1)
+        residual_fc23.weight.data.normal_(0, 0.005)
+        residual_fc23.bias.data.fill_(0.1)
+        self.class_residual_layer = nn.Sequential(residual_fc22, nn.ReLU(), residual_fc23)
+
+
+        self.feature_residual_layer = self.feature_residual_layer.cuda()
+        self.classifier_layer = self.classifier_layer.cuda()
+        self.class_residual_layer = self.class_residual_layer.cuda()
+        self.softmax_layer = nn.Softmax().cuda()
 
     def training(self, shuffle=True, interval=1000):
         prev_v = -10
         sampler = torch.utils.data.WeightedRandomSampler(self.data.in_weights, replacement=True, num_samples=self.args.batch_size)
         data_loader = DataLoader(self.data, batch_size=self.args.batch_size, sampler=sampler)
-
+        data_loader_v = DataLoader(self.data_v, batch_size=self.args.batch_size)
         # data_loader = DataLoader(self.data, batch_size=self.args.batch_size)
         # data_loader = self.data.data_loader_maker(self.args, shuffle, mode="train")
         
         for e in tqdm(range(self.epoch)):
             epoch_loss = 0
             self.model.train()
+            ## 추가
+            # self.classifier_layer.train(False)
+            # self.feature_residual_layer.train(False)
+            # self.class_residual_layer.train(False)
+
+            # self.model = nn.Sequential(self.model)
+            # self.classifier_layer = nn.Sequential(self.classifier_layer)
+            # self.feature_residual_layer = nn.Sequential(self.feature_residual_layer)
+            # self.classifier_layer = nn.Sequential(self.class_residual_layer)
+
+            # This has any effect only on modules such as Dropout or Batchnorm
+            self.model.train(True)
+            self.classifier_layer.train(True)
+            self.feature_residual_layer.train(True)
+            self.class_residual_layer.train(True)
+
+            # freeze BN layers
+            for m in self.model.modules():
+                if isinstance(m, nn.BatchNorm2d):
+                    m.training = False
+                    m.weight.requires_grad = False
+                    m.bias.requires_grad = False
 
             pred_label_acc = None
             true_label_acc = None
@@ -73,14 +129,19 @@ class TrainMaker:
             true_label = None
             # history_mini_batch = defaultdict(list)
             
-            for idx, data in enumerate(data_loader): 
+            for idx, data, idx_target, data_target in enumerate(data_loader, data_loader_v): 
                 x, y = data
-               
+                target_x, target_y = data_target
+                print(target_x, x)
+                raise
                 true_label = y.numpy()
                 b = x.shape[0]
 
-                self.optimizer.zero_grad() # optimizer 항상 초기화 
-                #x = x.reshape(b,1,30,-1) ############## checking [1, 1, 30, 700] 미츼ㅣㅣ
+                self.optimizer.zero_grad()
+                
+                ## 추가
+                inputs =  torch.cat((x,y))
+
                 x = x.reshape(b, 1, self.channel_num, -1) # [1, 1, 25, 750]
                 pred = self.model(x.to(device=self.device).float())
                 
@@ -112,15 +173,10 @@ class TrainMaker:
                 # Record history per mini-batch
                 self.record_history(log, self.history_mini_batch, phase='train')
 
-            # pred_list_acc = np.concatenate((pred_list_acc, pred_list))
-            # print(pred_list_acc)
-            
-            # print("=====", true_label)
-            # print("true_label:", true_label)
-            # print(true_label)
-            # print("\n\n\n", pred_list)
-            # print(true_label_acc)
-            # print(pred_label_acc)
+                
+
+
+
            
             f1 = f1_score(true_label_acc, pred_label_acc, average='macro') 
             acc = accuracy_score(true_label_acc, pred_label_acc)
@@ -227,142 +283,13 @@ class TrainMaker:
                 print('\nEpoch Test, f1:{:.4f}, acc:{:.4f}'.format(f1, acc))
             # print(cm)
             
-            # if self.args.mode == "test":
-            #     create_folder(f"./features_{self.args.model}_{self.args.epoch}")
-            #     np.savez(f"./features_{self.args.model}_{self.args.epoch}/original_subj{str(self.args.test_subj).zfill(2)}_epoch{self.args.epoch}", test_embeds, true_label_acc)
+            if self.args.mode == "test":
+                create_folder("./features")
+                np.savez(f"./features/subj{self.args.test_subj:2d}", test_embeds, true_label_acc)
             
 
         return f1, acc, cm, valid_loss
 
-
-    def predict_proba(self, data, interval=1000, n_instances=1, mcdo=False, random=False, *query_args, **query_kwargs):
-        data_loader = DataLoader(data, batch_size=self.args.batch_size)
-        
-        if not mcdo:
-            with torch.no_grad(): # gradient 안함
-                self.model.eval() # dropout은 training일 때만, evaluation으로 하면 dropout 해제 ############################
-
-                pred_list = []
-                uncertainty_list = []
-
-                for idx, data in enumerate(data_loader):
-                    # x = data
-                    # true_label.append(y)
-                    x = data
-                    b = x.shape[0]
-
-                    x = x.reshape(b, 1, self.channel_num, -1)
-                    pred = self.model(x.to(device=self.device).float())
-
-                    # pred = self.model(x.transpose(1,2).reshape(b,1,self.channel_num,-1).to(device=self.device).float())
-                    pred_prob = F.softmax(pred, dim=-1)
-                    # uncertainty = torch.max(pred_prob, dim=-1).values.cpu()
-                    uncertainty = torch.ones(pred_prob.shape[0]).cpu() - torch.max(pred_prob, dim=-1).values.cpu()
-                    pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy()
-                    
-                    pred_list.append(pred_label)
-                    uncertainty_list.append(uncertainty)
-                                
-                pred_list = np.concatenate(pred_list)
-                uncertainty_list = np.concatenate(uncertainty_list)
-                
-                if random is True:
-                    print("[Random strategy]")
-                    max_idx = np.random.choice(data.shape[0], 1, False)
-                    
-                else:
-                    max_idx = multi_argmax(uncertainty_list, n_instances=n_instances)
-                # print(pred_list)
-                pseudo_labeling = pred_list[max_idx]
-                
-                # return multi_argmax(uncertainty_list, n_instances=query_kwargs['n_instances'])
-
-        else:
-            with torch.no_grad(): 
-                self.model.eval()
-                self.enable_dropout(self.model.clf)
-
-                uncertainty_list = []
-                mean_lists =  []
-
-                for idx, data in enumerate(data_loader):
-                    pred_list = []
-                    for _ in range(10) :
-                        # x = data
-                        # true_label.append(y)
-                        x = data
-                        b = x.shape[0]
-
-                        x = x.reshape(b, 1, self.channel_num, -1)
-                        pred = self.model(x.to(device=self.device).float())
-                        
-                        # pred = self.model(x.transpose(1,2).reshape(b,1,self.channel_num,-1).to(device=self.device).float())
-                        pred_prob = F.softmax(pred, dim=-1)
-                    # uncertainty = torch.max(pred_prob, dim=-1).values.cpu()
-                    
-                        pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy()
-                        pred_list.append(pred_label)
-
-                    std_list = np.std(pred_list, axis=0)
-                    mean_list = np.mean(pred_list, axis=0)
-                    # pred_list = np.concatenate(pred_list)
-                    uncertainty_list.append(std_list)
-                    mean_lists.append(mean_list)
-                
-                uncertainty_list = np.concatenate(uncertainty_list)
-                pred_list = np.concatenate(mean_lists)
-                pred_list = pred_list.round(0)
-                max_idx = multi_argmax(uncertainty_list, n_instances=n_instances)
-                # print(pred_list)
-
-                pseudo_labeling = pred_list[max_idx]
-
-        return max_idx, pseudo_labeling
-
-    def predict_score(self, data, interval=1000, *query_args, **query_kwargs):
-        data_loader = DataLoader(data, batch_size=self.args.batch_size)
-   
-        with torch.no_grad(): # gradient 안함
-            self.model.eval() # dropout은 training일 때만, evaluation으로 하면 dropout 해제 ############################
-            pred_list = []
-            true_label = []
-
-            for idx, data in enumerate(data_loader):
-                x, y = data
-                true_label.append(y)
-                b = x.shape[0]
-                
-                pred = self.model(x.transpose(1,2).reshape(b,1,self.channel_num,-1).to(device=self.device).float())
-                pred_prob = F.softmax(pred, dim=-1)
-                
-                pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy()                
-                pred_list.append(pred_label)
-
-            pred_list = np.concatenate(pred_list)
-            true_label = np.concatenate(true_label)
-        
-        f1 = f1_score(true_label, pred_list, average="macro")
-        return f1
-
-    def pseudo_label(self, data, interval=1000, *query_args, **query_kwargs):
-        print("[trainer]pseudo_label에서의 print", data.x.shape)
-        data_loader = DataLoader(data, batch_size=self.args.batch_size)
-        pred_list = []
-        with torch.no_grad(): # gradient 안함
-            self.model.eval() # dropout은 training일 때만, evaluation으로 하면 dropout 해제 ############################
-      
-            for idx, data in enumerate(data_loader):
-                x, y = data
-                b = x.shape[0]
-                x = x.reshape(b, 1, self.channel_num, -1)
-                pred = self.model(x.to(device=self.device).float())
-                # pred = self.model(x.transpose(1,2).reshape(b,1,self.channel_num,-1).to(device=self.device).float())
-                pred_prob = F.softmax(pred, dim=-1)
-                
-                pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy() 
-                pred_list.append(pred_label)
-        pred_list = np.concatenate(pred_list)
-        return pred_list
 
     def record_history(self, log, history, phase):
         for metric in log:
