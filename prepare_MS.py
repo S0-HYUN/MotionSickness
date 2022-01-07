@@ -34,10 +34,10 @@ class Load_Data() :
             o_data_f.reset_index(drop = True, inplace = True)                   # 인덱스 재설정 0부터~~
 
             #---# set class #---#
-            # if args.class_num == 2:
-            #     o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else 1)
-            # elif args.class_num == 3:
-            #     o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else (2 if x >= args.score_list[1] else 1))
+            if args.class_num == 2:
+                o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else 1)
+            elif args.class_num == 3:
+                o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else (2 if x >= args.score_list[1] else 1))
             
             #---# visualization of each channel (check for trend) #---#
             # from matplotlib import pyplot as plt
