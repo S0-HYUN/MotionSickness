@@ -26,8 +26,13 @@ class Args:
         parser.add_argument("--model", type=str, default="EEGNet") #DeepConvNet, ShallowConvNet, EEGNet
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
-        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_0_123_456789/')
+        ### Motion sickness
+        # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_0_123_456789/')
         # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789/')
+        
+        ### bci competition
+        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic/')
+
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
         parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
@@ -41,8 +46,8 @@ class Args:
         # parser.add_argument("--wd_list", type=list, default=[1e-5, 1e-4, 1e-3])     #[1e-5, 1e-4, 1e-3]
         parser.add_argument("--n_queries", type=int, default=150)
 
-        parser.add_argument("--lr", type=float, default=1e-3)
-        parser.add_argument("--wd", type=float, default=1e-3)
+        parser.add_argument("--lr", type=float, default=2e-3) # 1e-3
+        parser.add_argument("--wd", type=float, default=2e-3) # 1e-3
 
         parser.add_argument('--scheduler', '-sch')
         if parser.parse_known_args()[0].scheduler == 'exp':
@@ -65,17 +70,17 @@ class Args:
 
         parser.add_argument("--metrics", type=list, default=["loss", "acc"])
 
-        parser.add_argument("--batch_size", type=int, default=64)              #512
-        parser.add_argument("--epoch", type=int, default=1000)                 #3000
-        parser.add_argument("--one_bundle", type=int, default=int(1500/2))
-        parser.add_argument("--channel_num", type=int, default=28)
-        parser.add_argument("--class_num", type=int, default=3)
+        parser.add_argument("--batch_size", type=int, default=1)              #512
+        parser.add_argument("--epoch", type=int, default=700)                 #3000
+        parser.add_argument("--one_bundle", type=int, default=1125)     #int(1500/2)
+        parser.add_argument("--channel_num", type=int, default=22)             #28
+        parser.add_argument("--class_num", type=int, default=4)
         parser.add_argument("--expt", type=int, default=1, help="1:오전,2:오후")
         if parser.parse_known_args()[0].expt == 1:
             parser.add_argument("--remove_subj", type=list, default=[1,2,4,14,16,17,19])
         else:
             parser.add_argument("--remove_subj", type=list, default=[4,8,11,17]) 
-        parser.add_argument("--test_subj", type=int, default=13)
+        parser.add_argument("--test_subj", type=int, default=7)
         parser.add_argument("--test_size", type=float, default=0.5); # 0.05
         # parser.add_argument("-")
     

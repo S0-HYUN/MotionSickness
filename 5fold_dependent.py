@@ -2,7 +2,7 @@ from sys import stderr
 from scipy.signal.windows.windows import exponential
 from torch.optim import optimizer
 import torch
-import data_loader
+import data_loader_5fold
 import trainer
 import os
 import pandas as pd
@@ -14,7 +14,7 @@ from trainer import TrainMaker
 import wandb
 
 def main():
-    wandb.init(project="my-test-project", entity="sohyun")
+    # wandb.init(project="my-test-project", entity="sohyun")
     args_class = Args()
     args = args_class.args
 
@@ -24,10 +24,14 @@ def main():
     sub = args.test_subj; print(f"==={args.test_subj}===")
 
     total_list_x = []
-    for d in range(1,3): 
-        data_name = make_name("Single", None, args.class_num, args.expt, d, str(sub), ".npz")
-        o_list = np.load(args.path + data_name)
-        total_list_x.append(o_list['x'])
+    # for d in range(1,3): 
+    #     data_name = make_name("Single", None, args.class_num, args.expt, d, str(sub), ".npz")
+    #     o_list = np.load(args.path + data_name)
+    #     total_list_x.append(o_list['x'])
+    
+    data_name = "subj" + str(sub).zfill(2) + ".npz"
+    o_list = np.load(args.path + data_name)
+    total_list_x.append(o_list['x'])
 
     data_x = np.vstack(total_list_x)
     num = data_x.shape[0]; print("총개수", num)
@@ -39,8 +43,8 @@ def main():
         # data = data_loader.Dataset(args, phase="train", idx=train_index[:int(len(train_index)*0.75)])
         # data_valid = data_loader.Dataset(args, phase="valid", idx=train_index[int(len(train_index)*0.75):])
         # data_test = data_loader.Dataset(args, phase="test", idx=test_index)
-        data = data_loader.Dataset(args, phase="train", idx=train_index)
-        data_valid = data_loader.Dataset(args, phase="train", idx=test_index)
+        data = data_loader_5fold.Dataset(args, phase="train", idx=train_index)
+        data_valid = data_loader_5fold.Dataset(args, phase="train", idx=test_index)
 
         model = ModelMaker(args_class).model
         trainer = TrainMaker(args, model, data, data_valid)
@@ -53,7 +57,7 @@ def main():
 
         df.loc[idx] = [args.test_subj, args.lr, args.wd, acc_v, f1_v, loss_v.cpu().numpy()]
         create_folder("./csvs")
-        df.to_csv(f'./csvs/Dependent_5fold_results_{args.model}_subj{args.test_subj}_batchsampler_parameter.csv', header = True, index = False)
+        df.to_csv(f'./csvs/20220109_bcic_Dependent_5fold_results_{args.model}_subj{args.test_subj}_batchsampler_parameter.csv', header = True, index = False)
         idx += 1
 
 def make_name(category_ss, test_size, class_num, expt, day, subj_num, category_tv):

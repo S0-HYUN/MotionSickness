@@ -1,6 +1,6 @@
 from numpy.core.fromnumeric import repeat
 from sklearn.manifold import TSNE
-import data_loader
+import data_loader_5fold
 from get_args import Args
 import numpy as np
 import matplotlib.patheffects as PathEffects

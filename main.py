@@ -27,7 +27,9 @@ def main():
 
     # Load data
     data = data_loader_active.Dataset(args, phase="train")
+    print(data.x.shape)
     data_valid = data_loader_active.Dataset(args, phase="valid")
+    print(data_valid.x.shape)
     data_test = data_loader_active.Dataset(args, phase="test")
     
     # Build model

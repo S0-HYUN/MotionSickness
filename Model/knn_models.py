@@ -1,6 +1,6 @@
 from modAL.models import ActiveLearner
 from modAL.uncertainty import uncertainty_sampling
-import data_loader
+import data_loader_5fold
 from get_args import Args
 
 from sklearn.neighbors import KNeighborsClassifier
@@ -9,8 +9,8 @@ knn = KNeighborsClassifier(n_neighbors=3)
 args_class = Args()
 args = args_class.args
 
-data = data_loader.Dataset(args, phase="train")
-valid_data = data_loader.Dataset(args, phase="valid")
+data = data_loader_5fold.Dataset(args, phase="train")
+valid_data = data_loader_5fold.Dataset(args, phase="valid")
 
 learner = ActiveLearner(
         # estimator=RandomForestClassifier(),

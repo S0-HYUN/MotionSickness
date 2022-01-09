@@ -177,7 +177,7 @@ class TrainMaker:
             true_label = None
             valid_loss = 0
             
-            test_embeds = torch.zeros((0,3))
+            # test_embeds = torch.zeros((0,3))
             for idx, data in enumerate(data_loader):
                 x, y = data
                 true_label = y.numpy()
@@ -205,8 +205,9 @@ class TrainMaker:
 
                 #---# for t-sne #---#
                 # embeds = torch.mean(activated_features.features, dim=0).view(-1,3)
-                embeds = activated_features.features
-                test_embeds = torch.cat((test_embeds, embeds), dim=0)
+
+                # embeds = activated_features.features
+                # test_embeds = torch.cat((test_embeds, embeds), dim=0)
 
                 self.cal = Calculate()
                 log = self.cal.calculator(metrics=self.args.metrics, loss=loss, y_true=y, y_pred=pred_label, acc_count=True)
