@@ -23,7 +23,7 @@ class Args:
         parser.add_argument("--seed", default=1004, type=int)
 
         #---# Model #---#
-        parser.add_argument("--model", type=str, default="EEGNet") #DeepConvNet, ShallowConvNet, EEGNet
+        parser.add_argument("--model", type=str, default="ShallowConvNet") #DeepConvNet, ShallowConvNet, EEGNet
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
         ### Motion sickness
@@ -31,7 +31,7 @@ class Args:
         # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789/')
         
         ### bci competition
-        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic/')
+        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic_modi/')
 
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
@@ -42,19 +42,16 @@ class Args:
         #---# Train #---#
 
         # Try several things at once
-        # parser.add_argument("--lr_list", type=list, default=[1e-5, 1e-4, 1e-3])     #[1e-5, 1e-4, 1e-3]
-        # parser.add_argument("--wd_list", type=list, default=[1e-5, 1e-4, 1e-3])     #[1e-5, 1e-4, 1e-3]
+        # parser.add_argument("--lr_list", type=list, default=[1e-5, 1e-4, 1e-3]) # [1e-5, 1e-4, 1e-3]
+        # parser.add_argument("--wd_list", type=list, default=[1e-5, 1e-4, 1e-3]) # [1e-5, 1e-4, 1e-3]
         parser.add_argument("--n_queries", type=int, default=150)
-
-        parser.add_argument("--lr", type=float, default=2e-3) # 1e-3
-        parser.add_argument("--wd", type=float, default=2e-3) # 1e-3
 
         parser.add_argument('--scheduler', '-sch')
         if parser.parse_known_args()[0].scheduler == 'exp':
             parser.add_argument('--gamma', type=float, required=True)
         elif parser.parse_known_args()[0].scheduler == 'step':
-            parser.add_argument('--step_size', type=int, required=True, default=1000)
-            parser.add_argument('--gamma', type=float, required=True, default=0.1)
+            parser.add_argument('--step_size', type=int, required=True, default=10)
+            parser.add_argument('--gamma', type=float, required=True, default=0.5)
         elif parser.parse_known_args()[0].scheduler == 'multi_step':
             parser.add_argument('--milestones', required=True) # type=str2list_int
             parser.add_argument('--gamma', type=float, required=True)
@@ -62,18 +59,21 @@ class Args:
             parser.add_argument('--factor', type=float, required=True)
             parser.add_argument('--patience', type=int, required=True)
         elif parser.parse_known_args()[0].scheduler == 'cosine':
-            parser.add_argument('--T_max', type=float, help='Max iteration number')
-            parser.add_argument('--eta_min', type=float, help='minimum learning rate')
+            parser.add_argument('--T_max', type=float, help='Max iteration number', default=50)
+            parser.add_argument('--eta_min', type=float, help='minimum learning rate', default=0)
 
         parser.add_argument("--criterion", type=str, default="CEE")
-        parser.add_argument("--optimizer", type=str, default="SGD") #AdamW
+        parser.add_argument("--optimizer", type=str, default="AdamW")   # AdamW
 
         parser.add_argument("--metrics", type=list, default=["loss", "acc"])
 
-        parser.add_argument("--batch_size", type=int, default=1)              #512
-        parser.add_argument("--epoch", type=int, default=700)                 #3000
-        parser.add_argument("--one_bundle", type=int, default=1125)     #int(1500/2)
-        parser.add_argument("--channel_num", type=int, default=22)             #28
+        parser.add_argument("--lr", type=float, default=0.000625) # 1e-3
+        parser.add_argument("--wd", type=float, default=0) # 1e-3
+
+        parser.add_argument("--batch_size", type=int, default=8)      # 512
+        parser.add_argument("--epoch", type=int, default=100)          # 3000
+        parser.add_argument("--one_bundle", type=int, default=1125)     # int(1500/2) / 1125
+        parser.add_argument("--channel_num", type=int, default=22)      # 28 / 22
         parser.add_argument("--class_num", type=int, default=4)
         parser.add_argument("--expt", type=int, default=1, help="1:오전,2:오후")
         if parser.parse_known_args()[0].expt == 1:

@@ -35,7 +35,7 @@ class ModelMaker:
             write_pickle(os.path.join(args.save_path, "model.pk"), model)
         else:
             self.args_class.get_load_path()
-            print(f"{args.load_path}에서 pretrained_model을 부르옵니다아ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ")           
+            print(f"{args.load_path}에서 pretrained_model call")           
             model = pretrained_model(args.load_path) #load_path
 
         return model

@@ -41,11 +41,9 @@ class Dataset(Dataset) :
             raise TypeError
 
         self.x = torch.tensor(self.data[0])
-        self.y = torch.tensor(self.data[1]).mean(-1)
-
-        # self.y = torch.tensor(self.data[1])
-        # self.y = self.y.reshape(self.y.shape[1])
-
+        # self.y = torch.tensor(self.data[1]).mean(-1)
+        self.y = torch.tensor(self.data[1])
+        self.y = self.y.reshape(self.y.shape[1])
         print(self.x.shape)
         print(self.y.shape)
         self.in_weights = make_weights_for_balanced_classes(self.y)
@@ -95,11 +93,19 @@ class Dataset(Dataset) :
         total_list_x = []
         total_list_y = []
 
-        for sub in list_: ################################################### 이게 최선인가여.. 맘에 안들어.
-            for d in range(1,3): 
-                data_name = self.make_name("Single", None, args.class_num, args.expt, d, str(sub), ".npz")
-                o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
-                total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+        for sub in list_:
+            data_name = "subj" + str(sub).zfill(2) + ".npz"
+            o_list = np.load(args.path + data_name)
+            data_len = o_list['x'].shape[0]
+            temp_x = o_list['x'][:int(data_len/2)]
+            temp_y = o_list['y'][:int(data_len/2)]
+            total_list_x.append(temp_x); total_list_y.append(temp_y)
+
+        # for sub in list_: ################################################### 이게 최선인가여.. 맘에 안들어.
+        #     for d in range(1,3): 
+        #         data_name = self.make_name("Single", None, args.class_num, args.expt, d, str(sub), ".npz")
+        #         o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
+        #         total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
         # data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
         # o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
@@ -124,9 +130,9 @@ class Dataset(Dataset) :
         total_list_x = []
         total_list_y = []
     
-        data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
-        o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
-        total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+        # data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
+        # o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
+        # total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
     
         
         # for sub in list_: ################################################### 이게 최선인가여.. 맘에 안들어.
@@ -153,10 +159,19 @@ class Dataset(Dataset) :
         total_list_x = []
         total_list_y = []
 
-        for sub in list_ :
-            data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_train.npz")
+        for sub in list_:
+            data_name = "subj" + str(sub).zfill(2) + ".npz"
             o_list = np.load(args.path + data_name)
-            total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+            data_len = o_list['x'].shape[0]
+            temp_x = o_list['x'][int(data_len/2):]
+            temp_y = o_list['y'][int(data_len/2):]
+            total_list_x.append(temp_x); total_list_y.append(temp_y)
+
+
+        # for sub in list_ :
+        #     data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_train.npz")
+        #     o_list = np.load(args.path + data_name)
+        #     total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
    
         # for sub in list_: ################################################### 이게 최선인가여.. 맘에 안들어.

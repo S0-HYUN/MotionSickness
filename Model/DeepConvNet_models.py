@@ -159,8 +159,19 @@ class ShallowConvNet_dk(nn.Module):
                                momentum=self.batch_norm_alpha,
                                affine=True,
                                eps=1e-5))
+            # self.layer1 = nn.Sequential(nn.Conv2d(1, n_ch1, (1,25), stride=1),
+            #                          nn.Conv2d(n_ch1, n_ch1, (input_ch, 1), stride=1,bias=False),
+            #                          nn.BatchNorm2d(n_ch1, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            #                          square(),
+            #                          nn.AvgPool2d(kernel_size=(1, 75), stride=(1, 1), padding=0),
+            #                          log(),
+            #                          nn.Dropout(p=0.5),
+            #                          nn.Conv2d(n_ch1, 4, kernel_size=(1, 30),  stride=(1, 1), dilation=(1, 15)),
+            #                          nn.LogSoftmax(dim=1)
+            #                          )
 
-        self.fc = nn.Linear(1760, n_classes)
+        self.fc = nn.Linear(2760, n_classes)
+        # self.fc = nn.Linear(1760, n_classes)
                                             
     def forward(self, x):
         x = self.layer1(x)
@@ -171,6 +182,26 @@ class ShallowConvNet_dk(nn.Module):
         x = torch.nn.functional.dropout(x) # shape [1, 1760]
         x = self.fc(x)
         return x
+# [8,1,22,1125] -> [8,4,1,592] -> [8,2368] -> [8,2368]
+
+class square(nn.Module):
+    def __init__(self):
+        super(square, self).__init__()
+
+    def forward(self, x):
+        out = x*x
+        return out
+
+class log(nn.Module):
+    def __init__(self):
+        super(log, self).__init__()
+
+    def forward(self, x):
+        out = self._log(x)
+        return out
+
+    def _log(self, x, eps=1e-6):
+        return torch.log(torch.clamp(x, min=eps))
 
 
 import argparse
@@ -206,9 +237,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # model = DeepConvNet(2,32,200)
     # model = ShallowConvNet_dk(1,30,725)
-    model = ShallowConvNet_dk(1,28,750)
+    model = ShallowConvNet_dk(1,22,1125)
     
     # model = FcClfNet(embedding_net)
     from pytorch_model_summary import summary
 
-    print(summary(model, torch.zeros((1, 1, 28, 750)), show_input=False))
+    # print(summary(model, torch.zeros((1, 1, 28, 750)), show_input=False))
+    print(summary(model, torch.zeros((1, 1, 22, 1125)), show_input=False))

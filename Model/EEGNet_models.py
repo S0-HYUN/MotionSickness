@@ -11,9 +11,9 @@ class EEGNet(nn.Module):
         self.batch_norm = batch_norm
         self.batch_norm_alpha = batch_norm_alpha
         self.n_classes = num_classes
-        freq = input_time #################### frequency
+        freq = input_time
         self.convnet = nn.Sequential(
-            nn.Conv2d(1, 8, kernel_size = (1, freq//2), stride = 1, bias = False, padding = (1 , freq//4)),
+            nn.Conv2d(1, 8, kernel_size = (1, freq//2), stride = 1, bias = False, padding = (0, freq//4)), #0
             nn.BatchNorm2d(8),
             nn.Conv2d(8, 16, kernel_size = (input_ch, 1), stride = 1, groups = 8),
             nn.BatchNorm2d(16),
@@ -67,11 +67,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     
-    model = EEGNet(3, 28, 750) # n_classes, n_channel, n_timewindow
+    model = EEGNet(4, 22, 1125) # n_classes, n_channel, n_timewindow
     # pred = model(torch.zeros(50, 1, 20, 250))
     # print(model)
     
     from pytorch_model_summary import summary
-    print(summary(model, torch.rand((1, 1, 28, 750)), show_input=False))
+    print(summary(model, torch.rand((1, 1, 22, 1125)), show_input=False))
     # model input = torch.rand((1,1,32,200))
     # batch size, channel, eeg electrodes, time window 

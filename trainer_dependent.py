@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils import data
 from torch.utils.data import DataLoader
-from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
+from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, precision_score
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -57,11 +57,10 @@ class TrainMaker:
 
     def training(self, shuffle=True, interval=1000):
         prev_v = -10
-        sampler = torch.utils.data.WeightedRandomSampler(self.data.in_weights, replacement=True, num_samples=self.args.batch_size)
-        data_loader = DataLoader(self.data, batch_size=self.args.batch_size, sampler=sampler)
 
+        sampler = torch.utils.data.WeightedRandomSampler(self.data.in_weights, replacement=True, num_samples=self.data.x.shape[0])
         # data_loader = DataLoader(self.data, batch_size=self.args.batch_size)
-        # data_loader = self.data.data_loader_maker(self.args, shuffle, mode="train")
+        data_loader = DataLoader(self.data, sampler=sampler, batch_size=self.args.batch_size)
         
         for e in tqdm(range(self.epoch)):
             epoch_loss = 0
@@ -72,29 +71,25 @@ class TrainMaker:
             pred_list = None
             true_label = None
             # history_mini_batch = defaultdict(list)
-            
+
             for idx, data in enumerate(data_loader): 
                 x, y = data
-               
                 true_label = y.numpy()
                 b = x.shape[0]
 
-                self.optimizer.zero_grad() # optimizer 항상 초기화 
-                #x = x.reshape(b,1,30,-1) ############## checking [1, 1, 30, 700] 미츼ㅣㅣ
+                self.optimizer.zero_grad()
                 x = x.reshape(b, 1, self.channel_num, -1) # [1, 1, 25, 750]
                 pred = self.model(x.to(device=self.device).float())
                 
                 pred_prob = F.softmax(pred, dim=-1) 
-                # pred, (hidden_state, cell_state) = network(x.view(b, 1, -1).float().to(device=device), (hidden_state[:,:b].detach().contiguous(), cell_state[:,:b].detach().contiguous())) # view함수 -> 밑에 적음
                 loss = self.criterion(pred_prob, y.flatten().long().to(device=self.device)) 
                 if (idx+1) % interval == 0: print('[Epoch{}, Step({}/{})] Loss:{:.4f}'.format(e+1, idx+1, len(data_loader.dataset) // self.args.batch_size, epoch_loss / (idx + 1)))
-
+                
                 loss.backward()
                 epoch_loss += loss.item()
                 self.optimizer.step()
                 
                 pred_label = torch.argmax(pred_prob, dim=-1).cpu().numpy()
-                # pred_list.append(pred_label) # pred_list에 prediction 넣어주기
 
                 if pred_label_acc is None:
                     pred_label_acc = pred_label
@@ -103,9 +98,7 @@ class TrainMaker:
                     pred_label_acc = np.concatenate((pred_label_acc, pred_label), axis=None)
                     true_label_acc = np.concatenate((true_label_acc, true_label), axis=None)
 
-                
                 # Calculate log per mini-batch
-                # log = calculate(self.args.metrics, loss, labels, outputs, acc_count=True)
                 self.cal = Calculate()
                 log = self.cal.calculator(metrics=self.args.metrics, loss=loss, y_true=y, y_pred=pred_label, acc_count=True)
                 
@@ -114,62 +107,53 @@ class TrainMaker:
 
             # pred_list_acc = np.concatenate((pred_list_acc, pred_list))
             # print(pred_list_acc)
-            
-            # print("=====", true_label)
-            # print("true_label:", true_label)
-            # print(true_label)
-            # print("\n\n\n", pred_list)
-            # print(true_label_acc)
-            # print(pred_label_acc)
            
             f1 = f1_score(true_label_acc, pred_label_acc, average='macro') 
             acc = accuracy_score(true_label_acc, pred_label_acc)
             cm = confusion_matrix(true_label_acc, pred_label_acc)
             epoch_loss = epoch_loss / (idx+1)
-            
+            self.scheduler.step()
             # print('\nEpoch{} Training, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}'.format(e+1, f1, acc, epoch_loss))
-            # print(cm) # confusion matrix print
+            # print(cm)
 
             f1_v, acc_v, cm_v, loss_v = self.evaluation(self.data_v)
-            if f1_v > prev_v : 
-                prev_v = f1_v 
-                create_folder('./param/lr{}_wd{}'.format(self.lr, self.wd))
-                torch.save(self.model.state_dict(), './param/lr{}_wd{}/eegnet_f1_{:.2f}'.format(self.lr, self.wd, f1_v))
-                self.save_checkpoint(epoch=len(self.history['train_loss']))
+            # if f1_v > prev_v : 
+            #     prev_v = f1_v 
+            #     create_folder('./param/lr{}_wd{}'.format(self.lr, self.wd))
+            #     torch.save(self.model.state_dict(), './param/lr{}_wd{}/eegnet_f1_{:.2f}'.format(self.lr, self.wd, f1_v))
+            #     self.save_checkpoint(epoch=len(self.history['train_loss']))
             
-            self.write_history(self.history_mini_batch)
+            # self.write_history(self.history_mini_batch)
             # writer.add_scalar('Learning Rate', lr.get_last_lr()[-1], e)
-            self.writer.add_scalar('Train/Loss', epoch_loss, e)
-            self.writer.add_scalar('Train/F1', f1, e)
-            self.writer.add_scalar('Train/Acc', acc, e)
+            # self.writer.add_scalar('Train/Loss', epoch_loss, e)
+            # self.writer.add_scalar('Train/F1', f1, e)
+            # self.writer.add_scalar('Train/Acc', acc, e)
 
-            self.writer.add_scalar('Valid/Loss', loss_v, e)
-            self.writer.add_scalar('Valid/F1', f1_v, e)
-            self.writer.add_scalar('Valid/Acc', acc_v, e)
-            self.writer.flush()
+            # self.writer.add_scalar('Valid/Loss', loss_v, e)
+            # self.writer.add_scalar('Valid/F1', f1_v, e)
+            # self.writer.add_scalar('Valid/Acc', acc_v, e)
+            # self.writer.flush()
 
-            wandb.log({"loss": epoch_loss,
-                        "acc": acc,
-                        "f1":f1,
-                        "vloss": loss_v,
-                        "vacc": acc_v,
-                        "vf1":f1_v,
-                        # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
-            })
-            self.scheduler.step()
-
-        return acc, f1, cm, epoch_loss
-        # return f1_v, acc_v, cm_v, loss_v
+            # wandb.log({"loss": epoch_loss,
+            #             "acc": acc,
+            #             "f1":f1,
+            #             "vloss": loss_v,
+            #             "vacc": acc_v,
+            #             "vf1":f1_v,
+            #             # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
+            # })
+        # return acc, f1, cm, epoch_loss
+        return f1_v, acc_v, cm_v, loss_v
 
     def evaluation(self, data, interval=1000):
         flag = list(self.model._modules)[-1]
         final_layer = self.model._modules.get(flag)
-        activated_features = FeatureExtractor(final_layer) #############################
+        activated_features = FeatureExtractor(final_layer) ############################# for t-SNE
 
         data_loader = DataLoader(data, batch_size=self.args.batch_size)
 
-        with torch.no_grad(): # gradient 안함
-            self.model.eval() # dropout은 training일 때만, evaluation으로 하면 dropout 해제
+        with torch.no_grad(): 
+            self.model.eval()
             
             pred_label_acc = None
             true_label_acc = None
@@ -185,11 +169,7 @@ class TrainMaker:
 
                 x = x.reshape(b, 1, self.channel_num, -1)
                 pred = self.model(x.to(device=self.device).float())
-                
-                # 밑에 두개 중에뭐지?
-                # pred = self.model(x.transpose(1,2).reshape(b,1,self.channel_num,-1).to(device=self.device).float())
-                #pred = self.model(x.reshape(b,1,30,-1).to(device=device).float()) #self.model(x.transpose(1,2).reshape(b,1,30,-1).to(device=device).float())
-                
+                    
                 loss = self.criterion(pred, y.flatten().long().to(device=self.device)) # pred.shape
                 valid_loss += loss
                 # if (idx+1) % interval == 0: print('[Epoch, Step({}/{})] Valid Loss:{:.4f}'.format(idx+1, len(data)//self.args.batch_size, loss / (idx +1)))
@@ -214,16 +194,13 @@ class TrainMaker:
                 
                 # Record history per mini-batch
                 self.record_history(log, self.history_mini_batch, phase='val')
-            # valid_loss = valid_loss / (idx+1)            
-            # pred_list = np.concatenate(pred_list)
-            # true_label = np.concatenate(true_label)
-            # print(true_label_acc)
-            # print(pred_label_acc)
+
             f1 = f1_score(true_label_acc, pred_label_acc, average='macro')
             acc = accuracy_score(true_label_acc, pred_label_acc)
             cm = confusion_matrix(true_label_acc, pred_label_acc)
+            precision = precision_score(true_label_acc, pred_label_acc, average="micro")
             if not self.args.mode == "test":
-                print('\nEpoch Validation, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}'.format(f1, acc, valid_loss))
+                print('\nEpoch Validation, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}, Precision:{:.4f}'.format(f1, acc, valid_loss, precision))
             else:
                 print('\nEpoch Test, f1:{:.4f}, acc:{:.4f}'.format(f1, acc))
             # print(cm)
@@ -231,8 +208,7 @@ class TrainMaker:
             # if self.args.mode == "test":
             #     create_folder(f"./features_{self.args.model}_{self.args.epoch}")
             #     np.savez(f"./features_{self.args.model}_{self.args.epoch}/original_subj{str(self.args.test_subj).zfill(2)}_epoch{self.args.epoch}", test_embeds, true_label_acc)
-            
-
+        
         return f1, acc, cm, valid_loss
 
 
@@ -399,6 +375,7 @@ class TrainMaker:
             criterion = nn.MSELoss()
         elif criterion == "CEE":
             criterion = nn.CrossEntropyLoss()
+            # criterion = nn.NLLLoss()
         elif criterion == "Focal":
             criterion = FocalLoss(gamma=2)
         elif criterion == "ND":
