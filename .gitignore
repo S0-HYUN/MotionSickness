@@ -16,3 +16,5 @@
 /features_originalrange
 /features_EEGNet_10
 /output_bcic
+/output_bcic_modi
+bcic_datasets_[0,38].pkl

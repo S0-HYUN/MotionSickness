@@ -27,11 +27,11 @@ class ModelMaker:
             if args.model == 'DeepConvNet':
                 model = DeepConvNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device) 
             elif args.model == 'ShallowConvNet':
-                model = ShallowConvNet_dk(args.class_num, args.channel_num).to(device = self.device)
+                model = ShallowConvNet_dk(args.class_num, args.channel_num, 1000).to(device = self.device)
+                # model = ShallowConvNet_dk(args.class_num, args.channel_num).to(device = self.device)
             elif args.model == 'EEGNet':
                 model = EEGNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device)
-            elif args.model == 'DCAN':
-                model = dcca_eeg()
+
             write_pickle(os.path.join(args.save_path, "model.pk"), model)
         else:
             self.args_class.get_load_path()

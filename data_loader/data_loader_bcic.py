@@ -44,8 +44,6 @@ class Dataset(Dataset) :
         # self.y = torch.tensor(self.data[1]).mean(-1)
         self.y = torch.tensor(self.data[1])
         self.y = self.y.reshape(self.y.shape[1])
-        print(self.x.shape)
-        print(self.y.shape)
         self.in_weights = make_weights_for_balanced_classes(self.y)
 
         # self.x = torch.sum(self.x, axis=1)

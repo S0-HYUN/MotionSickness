@@ -23,7 +23,7 @@ class Args:
         parser.add_argument("--seed", default=1004, type=int)
 
         #---# Model #---#
-        parser.add_argument("--model", type=str, default="ShallowConvNet") #DeepConvNet, ShallowConvNet, EEGNet
+        parser.add_argument("--model", type=str, default="EEGNet") #DeepConvNet, ShallowConvNet, EEGNet
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
         ### Motion sickness
@@ -32,7 +32,7 @@ class Args:
         
         ### bci competition
         parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic_modi/')
-
+        # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789/')
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
         parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
@@ -63,7 +63,7 @@ class Args:
             parser.add_argument('--eta_min', type=float, help='minimum learning rate', default=0)
 
         parser.add_argument("--criterion", type=str, default="CEE")
-        parser.add_argument("--optimizer", type=str, default="AdamW")   # AdamW
+        parser.add_argument("--optimizer", type=str, default="SGD")   # AdamW
 
         parser.add_argument("--metrics", type=list, default=["loss", "acc"])
 

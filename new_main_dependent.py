@@ -11,6 +11,7 @@ import wandb
 import pickle
 from Model.DeepConvNet_models import ShallowConvNet_dk
 import data_loader_bcic
+        
 
 def main():
     # wandb.init(project="my-test-project", entity="sohyun")
@@ -78,13 +79,19 @@ def main():
     # test_loader = torch.utils.data.DataLoader(test_set, batch_size=args.batch_size, shuffle=False)
     train_data = data_loader_bcic.Dataset(args, phase="train")
     test_data = data_loader_bcic.Dataset(args, phase="valid")
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
+    
+    train_set1 = BcicDataset_window(train_data, window_num=0)
+    train_set2 = BcicDataset_window(train_data, window_num=1)
+    train_set = ConcatDataset([train_set1, train_set2])
+    
+    
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
 
     crop_size =1000
     model = ShallowConvNet_dk(n_classes, 22, crop_size)
     
-    print(model)
+    # print(model)
     cuda = torch.cuda.is_available()
     # check if GPU is available, if True chooses to use it
     device = 'cuda' if cuda else 'cpu'
@@ -109,8 +116,7 @@ def main():
         if test_score >= best_acc:
             best_acc = test_score
             torch.save(model.state_dict(), os.path.join(
-                path,
-                "model_subject{}_best.pt".format(args.test_subj)))
+                path, "model_subject{}_best.pt".format(args.test_subj)))
 
 
     best_model = ShallowConvNet_dk(n_classes, 22, crop_size)
@@ -130,12 +136,15 @@ class BcicDataset_window(Dataset):
         self.dataset = dataset
         self.len = len(dataset)
         self.window_num = window_num
+
     def __len__(self):
         return self.len
         
     def __getitem__(self, idx):
-        X, y, idx = self.dataset.__getitem__(idx)
-        return X[:,:,self.window_num*125:self.window_num*125+1000], y, idx
+        X, y = self.dataset.__getitem__(idx)
+        return X[:,self.window_num*125:self.window_num*125+1000], y
+        # X, y, idx = self.dataset.__getitem__(idx)
+        # return X[:,:,self.window_num*125:self.window_num*125+1000], y, idx
 
 if __name__ == "__main__" :
     main()

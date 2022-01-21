@@ -21,7 +21,7 @@ from collections import defaultdict
 import wandb
 from utils_drawing import visualizer
 
-class TrainMaker:
+class TrainMaker_shallow:
     def __init__(self, args, model, data, data_v=None):
             self.args = args
             self.model = model
@@ -35,8 +35,10 @@ class TrainMaker:
             self.optimizer = self.optimizer(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
 
             self.scheduler = self.__set_scheduler(args, self.optimizer)
-            self.criterion = self.__set_criterion(self.args.criterion)
-
+            # self.criterion = self.__set_criterion(self.args.criterion)
+            crit = torch.nn.NLLLoss()
+            self.criterion = CroppedLoss(crit)
+            
             self.epoch = self.args.epoch
             self.lr = self.args.lr
             self.wd = self.args.wd
@@ -67,30 +69,32 @@ class TrainMaker:
             true_label = None
             # history_mini_batch = defaultdict(list)
 
-            for idx, (x, y) in enumerate(data_loader): 
+            for idx, data in enumerate(data_loader): 
+                x, y = data
                 true_label = y.numpy()
+                b = x.shape[0]
 
                 self.optimizer.zero_grad()
-                x = x.reshape(x.shape[0], 1, self.channel_num, -1) # [1, 1, 25, 750]
+                x = x.reshape(b, 1, self.channel_num, -1) # [1, 1, 25, 750]
                 pred = self.model(x.to(device=self.device).float())
 
-                pred_prob = F.softmax(pred, dim=-1) 
+                # pred_prob = F.softmax(pred, dim=-1) 
                 loss = self.criterion(pred, y.flatten().long().to(device=self.device)) 
-                # if (idx+1) % interval == 0: print('[Epoch{}, Step({}/{})] Loss:{:.4f}'.format(e+1, idx+1, len(data_loader.dataset) // self.args.batch_size, epoch_loss / (idx + 1)))
+                if (idx+1) % interval == 0: print('[Epoch{}, Step({}/{})] Loss:{:.4f}'.format(e+1, idx+1, len(data_loader.dataset) // self.args.batch_size, epoch_loss / (idx + 1)))
                 
                 loss.backward()
                 epoch_loss += loss.item()
                 self.optimizer.step()
                 
-                pred_label = torch.argmax(pred_prob, dim=-1).cpu().numpy()
-                
+                # pred_label = torch.argmax(pred_prob, dim=-1).cpu().numpy()
+                '''
                 if pred_label_acc is None:
                     pred_label_acc = pred_label
                     true_label_acc = true_label
                 else:
                     pred_label_acc = np.concatenate((pred_label_acc, pred_label), axis=None)
                     true_label_acc = np.concatenate((true_label_acc, true_label), axis=None)
-                
+                '''
                 # Calculate log per mini-batch
                 # self.cal = Calculate()
                 # log = self.cal.calculator(metrics=self.args.metrics, loss=loss, y_true=y, y_pred=pred_label, acc_count=True)
@@ -100,14 +104,14 @@ class TrainMaker:
 
             # pred_list_acc = np.concatenate((pred_list_acc, pred_list))
             # print(pred_list_acc)
-
+            '''
             f1 = f1_score(true_label_acc, pred_label_acc, average='macro') 
             acc = accuracy_score(true_label_acc, pred_label_acc)
             cm = confusion_matrix(true_label_acc, pred_label_acc)
             epoch_loss = epoch_loss / (idx+1)
-            
+            '''
             self.scheduler.step()
-            print('\nEpoch{} Training, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}'.format(e+1, f1, acc, epoch_loss))
+            # print('\nEpoch{} Training, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}'.format(e+1, f1, acc, epoch_loss))
             # print(cm)
 
             f1_v, acc_v, cm_v, loss_v = self.evaluation(self.data_v)
@@ -158,7 +162,7 @@ class TrainMaker:
             
             pred_label_acc = None
             true_label_acc = None
-            pred_label = None
+            pred_list = None
             true_label = None
             valid_loss = 0
             
@@ -169,16 +173,28 @@ class TrainMaker:
                 b = x.shape[0]
 
                 # x = x.reshape(b, 1, self.channel_num, -1)
-                x = torch.unsqueeze(x, 1)
-                # x = x.permute(0,1,3,2)
+                # pred = self.model(x.to(device=self.device).float())
+            
+                # loss = self.criterion(pred, y.flatten().long().to(device=self.device)) # pred.shape
+                # valid_loss += loss
 
-                pred = self.model(x.to(device=self.device).float())            
-                loss = self.criterion(pred, y.flatten().long().to(device=self.device)) # pred.shape
-                valid_loss += loss
+                ### for shallow
+                outputs = []
+                for i in range(2):
+                    d = x[:,:,i*125:i*125 + 1000]
+                    d = d.reshape(b, 1, self.channel_num, -1)
+                    outputs.append(self.model(d.to(device=self.device).float())) # outputs[0] / [1] -> [8,4,467]
 
+                result = torch.cat([outputs[0],outputs[1][:,:,self.model.out_size-125:self.model.out_size]],dim=2) # [8,4,592] #out_size=467
+                y_preds_per_trial = result.mean(dim=2) # [8,4]
+                
+                test_loss.append(F.nll_loss(y_preds_per_trial, y.flatten().long().to(device=self.device), reduction="sum").item())
+ 
+                pred_label = y_preds_per_trial.argmax(dim=1, keepdim=True).cpu().numpy()
                 # if (idx+1) % interval == 0: print('[Epoch, Step({}/{})] Valid Loss:{:.4f}'.format(idx+1, len(data)//self.args.batch_size, loss / (idx +1)))
-                pred_prob = F.softmax(pred, dim=-1)
-                pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy()    
+                # pred_prob = F.softmax(pred, dim=-1)
+                # pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy()
+                # print(pred_prob)
                 
                 if pred_label_acc is None:
                     pred_label_acc = pred_label
@@ -194,19 +210,18 @@ class TrainMaker:
                 # test_embeds = torch.cat((test_embeds, embeds), dim=0)
 
                 #---# record history #---#
-                self.cal = Calculate()
-                log = self.cal.calculator(metrics=self.args.metrics, loss=loss, y_true=y, y_pred=pred_label, acc_count=True)
+                # self.cal = Calculate()
+                # log = self.cal.calculator(metrics=self.args.metrics, loss=loss, y_true=y, y_pred=pred_label, acc_count=True)
                 
                 #---# Record history per mini-batch #---#
-                self.record_history(log, self.history_mini_batch, phase='val')
+                # self.record_history(log, self.history_mini_batch, phase='val')
 
             f1 = f1_score(true_label_acc, pred_label_acc, average='macro')
             acc = accuracy_score(true_label_acc, pred_label_acc)
             cm = confusion_matrix(true_label_acc, pred_label_acc)
             precision = precision_score(true_label_acc, pred_label_acc, average="micro")
             if not self.args.mode == "test":
-                print("")
-                # print('\nEpoch Validation, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}, Precision:{:.4f}'.format(f1, acc, valid_loss, precision))
+                print('\nEpoch Validation, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}, Precision:{:.4f}'.format(f1, acc, valid_loss, precision))
             else:
                 print('\nEpoch Test, f1:{:.4f}, acc:{:.4f}'.format(f1, acc))
             # print(cm)
@@ -214,6 +229,7 @@ class TrainMaker:
             # if self.args.mode == "test":
             #     create_folder(f"./features_{self.args.model}_{self.args.epoch}")
             #     np.savez(f"./features_{self.args.model}_{self.args.epoch}/original_subj{str(self.args.test_subj).zfill(2)}_epoch{self.args.epoch}", test_embeds, true_label_acc)
+            valid_loss = sum(test_loss)/len(data_loader.dataset)
         return f1, acc, cm, valid_loss
 
 
@@ -456,3 +472,12 @@ class Calculate:
             return data
         else:
             raise ValueError("Check your data type.")
+
+class CroppedLoss:
+    def __init__(self, loss_function):
+        self.loss_function = loss_function
+
+    def __call__(self, preds, targets):
+        avg_preds = torch.mean(preds, dim=2)
+        avg_preds = avg_preds.squeeze(dim=1)
+        return self.loss_function(avg_preds, targets)

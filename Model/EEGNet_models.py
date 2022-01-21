@@ -11,7 +11,8 @@ class EEGNet(nn.Module):
         self.batch_norm = batch_norm
         self.batch_norm_alpha = batch_norm_alpha
         self.n_classes = num_classes
-        freq = input_time
+        # freq = input_time
+        freq = 250
         self.convnet = nn.Sequential(
             nn.Conv2d(1, 8, kernel_size = (1, freq//2), stride = 1, bias = False, padding = (0, freq//4)), #0
             nn.BatchNorm2d(8),
@@ -35,6 +36,7 @@ class EEGNet(nn.Module):
         self.n_outputs = out.size()[1] * out.size()[2] * out.size()[3]
 
         self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes), nn.Dropout(p=0.2))  ####################### classifier 
+        
         # self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes), nn.Dropout(p=0.2))  ####################### classifier 
         # DG usually doesn't have classifier
         # so, add at the end
