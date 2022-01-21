@@ -17,4 +17,10 @@
 /features_EEGNet_10
 /output_bcic
 /output_bcic_modi
+
+Model/__pycache__/DCAN_models.cpython-38.pyc
+Model/__pycache__/DeepConvNet_models.cpython-38.pyc
+Model/__pycache__/EEGNet_models.cpython-38.pyc
+Model/__pycache__/model_maker.cpython-38.pyc
 bcic_datasets_[0,38].pkl
+
