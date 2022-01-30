@@ -31,8 +31,8 @@ class Args:
         # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789/')
         
         ### bci competition
-        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic_modi/')
-        # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789/')
+        # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic_modi/')
+        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789/')
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
         parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
@@ -72,15 +72,15 @@ class Args:
 
         parser.add_argument("--batch_size", type=int, default=8)      # 512
         parser.add_argument("--epoch", type=int, default=100)          # 3000
-        parser.add_argument("--one_bundle", type=int, default=1125)     # int(1500/2) / 1125
-        parser.add_argument("--channel_num", type=int, default=22)      # 28 / 22
-        parser.add_argument("--class_num", type=int, default=4)
+        parser.add_argument("--one_bundle", type=int, default=750)     # int(1500/2) / 1125
+        parser.add_argument("--channel_num", type=int, default=28)      # 28 / 22
+        parser.add_argument("--class_num", type=int, default=3)
         parser.add_argument("--expt", type=int, default=1, help="1:오전,2:오후")
         if parser.parse_known_args()[0].expt == 1:
             parser.add_argument("--remove_subj", type=list, default=[1,2,4,14,16,17,19])
         else:
             parser.add_argument("--remove_subj", type=list, default=[4,8,11,17]) 
-        parser.add_argument("--test_subj", type=int, default=7)
+        parser.add_argument("--test_subj", type=int, default=13)
         parser.add_argument("--test_size", type=float, default=0.5); # 0.05
         # parser.add_argument("-")
     

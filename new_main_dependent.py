@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, ConcatDataset
 import wandb
 import pickle
 from Model.DeepConvNet_models import ShallowConvNet_dk
-import data_loader_bcic
+import data_loader.data_loader_bcic
         
 
 def main():

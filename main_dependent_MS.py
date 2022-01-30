@@ -2,7 +2,7 @@ from sys import stderr
 from scipy.signal.windows.windows import exponential
 from torch.optim import optimizer
 import torch
-import data_loader_bcic
+import data_loader.data_loader_stft
 import pandas as pd
 from get_args import Args
 from utils import *
@@ -19,15 +19,15 @@ def main():
  
     # Fix seed
     if args.seed:
-        fix_random_seed(args)
+        fix_random_seed(args) 
     
     # Save a file 
     df = pd.DataFrame(columns = ['test_subj', 'lr', 'wd', 'epoch', 'acc', 'f1', 'loss']); idx = 0
 
     # Load data
-    data = data_loader_bcic.Dataset(args, phase="train")
-    data_valid = data_loader_bcic.Dataset(args, phase="valid")
-    # data_test = data_loader_bcic.Dataset(args, phase="test")
+    data = data_loader.data_loader_stft.Dataset(args, phase="train")
+    data_valid = data_loader.data_loader_stft.Dataset(args, phase="valid")
+    # data_test = data_loader.data_loader_stft.Dataset(args, phase="test")
     
     # Build model
     model = ModelMaker(args_class).model
@@ -56,21 +56,6 @@ def main():
         f1_v, acc_v, cm_v, loss_v = trainer.evaluation(data_test)
 
     df.to_csv(f'./csvs/2201181200_bcic_dependent_results_{args.model}_subj{args.test_subj}.csv', header = True, index = False)
-
-class BcicDataset_window(Dataset):
-    def __init__(self, dataset, window_num):
-        self.dataset = dataset
-        self.len = len(dataset)
-        self.window_num = window_num
-
-    def __len__(self):
-        return self.len
-        
-    def __getitem__(self, idx):
-        X, y = self.dataset.__getitem__(idx)
-        return X[:,self.window_num*125:self.window_num*125+1000], y
-        # X, y, idx = self.dataset.__getitem__(idx)
-        # return X[:,:,self.window_num*125:self.window_num*125+1000], y, idx
 
 if __name__ == "__main__" :
     main()

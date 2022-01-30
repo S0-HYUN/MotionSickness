@@ -7,7 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from Model.model_maker import ModelMaker
 # add
-import data_loader_5fold
+import data_loader.data_loader_5fold
 from get_args import Args
 from trainer import TrainMaker
 from sklearn.metrics import f1_score
@@ -20,10 +20,10 @@ if __name__ == '__main__':
     args_class = Args()
     args = args_class.args
     
-    data = data_loader_5fold.Dataset(args, phase="train")
-    data_pool = data_loader_5fold.Dataset(args, phase="pool")        
-    data_valid = data_loader_5fold.Dataset(args, phase="valid")
-    data_test = data_loader_5fold.Dataset(args, phase="test")
+    data = data_loader.data_loader_5fold.Dataset(args, phase="train")
+    data_pool = data_loader.data_loader_5fold.Dataset(args, phase="pool")        
+    data_valid = data_loader.data_loader_5fold.Dataset(args, phase="valid")
+    data_test = data_loader.data_loader_5fold.Dataset(args, phase="test")
 
     # time
     tm = time.localtime(time.time())
