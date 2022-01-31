@@ -1,3 +1,4 @@
+from Model.CRL_models import CRLNet
 from Model.DCAN_models import dcca_eeg
 from Model.DeepConvNet_models import *
 from Model.EEGNet_models import *
@@ -31,7 +32,8 @@ class ModelMaker:
                 # model = ShallowConvNet_dk(args.class_num, args.channel_num).to(device = self.device)
             elif args.model == 'EEGNet':
                 model = EEGNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device)
-
+            elif args.model == 'CRL':
+                model = CRLNet(args.class_num, args.channel_num).to(device = self.device)
             write_pickle(os.path.join(args.save_path, "model.pk"), model)
         else:
             self.args_class.get_load_path()

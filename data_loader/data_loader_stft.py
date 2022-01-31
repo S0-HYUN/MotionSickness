@@ -13,16 +13,16 @@ from utils import *
 class Dataset(Dataset) :
     def __init__(self, args, phase):
         print(f"Data Loading... ({phase})")
-        # train_list = data_preprocesesing(list(range(1,24)), args.remove_subj, [args.test_subj])
-        train_list = data_preprocesesing(list(range(1,10)), args.remove_subj, [args.test_subj])
+        train_list = data_preprocesesing(list(range(1,24)), args.remove_subj, [args.test_subj])
+        # train_list = data_preprocesesing(list(range(1,10)), args.remove_subj, [args.test_subj])
         self.phase = phase
         
         if args.mode == "train":
             #---# train / pool / valid #---#
 
             if self.phase == "train":
-                # self.data = self.make_training(args, train_list)
-                self.data = self.make_training(args, [args.test_subj])
+                self.data = self.make_training(args, train_list)
+                # self.data = self.make_training(args, [args.test_subj])
 
             elif self.phase == "pool":
                 self.data = self.make_pool(args, train_list)
@@ -45,66 +45,30 @@ class Dataset(Dataset) :
 
         # self.y = torch.tensor(self.data[1])
         # self.y = self.y.reshape(self.y.shape[1])
-        
-        xx = self.x.reshape(-1, args.channel_num)
 
         from scipy import signal
         fs = 250 # sampling frequency of the x time series
-        wlen = 64
+        wlen = 125
         hop = 14
         nfft = 512
-        # f, t, Zxx = signal.stft(self.x, fs, nperseg=1000)
-        # f : array of sample frequencies
-        # t : array of segment times
-        # Zxx : stft of x
         channel_data = []
         for i in range(args.channel_num) :
-            channel_data.append(xx[:,i])            
-        # print("===", channel_data[26].shape) #[897,750]
-        
+            channel_data.append(self.x[:,:,i])
+ 
         # f, t, Zxx = signal.stft(channel_data[0], fs=fs, window='hamming', noverlap=wlen-hop, nfft=nfft, boundary=None, padded=False)
-        # f, t, Zxx = signal.stft(channel_data[0])
-        #이거 # f, t, Zxx = signal.stft(channel_data[0], fs=fs, nperseg=wlen, window='hamming', noverlap=wlen-hop)
+        # f, t, Zxx = signal.stft(channel_data[0], fs=fs, nperseg=wlen, noverlap=wlen-hop)
+        # f, t, Zxx = signal.stft(channel_data[0], fs=fs, nperseg=wlen, window='hamming', noverlap=wlen-hop)
         # print(f.shape)
         # print(t.shape)
         # print(Zxx.shape)
 
-        # temp = channel_data[0].reshape(-1) #[672750]
-        # print(temp.shape)
-        
-        import matplotlib.pyplot as plt
-        
-        # f, t, Sxx = signal.spectrogram(channel_data[0], fs=fs, nperseg=wlen, window='hamming', noverlap=wlen-hop)
+        xx = []
         for i in range(args.channel_num) : #args.channel_num
-            plt.clf()
-            channel_data[i] = channel_data[i] * (1e+1)
-            f, t, Sxx = signal.spectrogram(channel_data[i], fs=fs, window='hamming', noverlap=wlen-hop)
-            # print(Sxx.shape); print(f.shape); print(t.shape)
-            plt.pcolormesh(t, f, Sxx, shading='gouraud') 
-            plt.colorbar()
-            plt.clim(0,10)
-            plt.ylabel('Frequency'); plt.xlabel('Time')
-            plt.savefig(f'channel{str(i+1)}.png')
-        
-        # print("======================================")
-        # for i in range(Zxx.shape[0]) :
-        #     f2, t2, Sxx2 = signal.spectrogram(channel_data[0], fs=fs, nperseg=wlen, window='hamming', noverlap=wlen-hop)
-        #     print("++", Sxx2.shape)
-        #     print(t2.shape)
-        #     print(f2.shape)
-        #     print(Sxx2[i,:,:].shape)
-        #     print(Sxx2)
-        #     plt.pcolormesh(t2, f2, Sxx2[i,:,:], shading='gouraud')
-        #     # plt.specgram(Sxx[0,:,:])
-        #     plt.ylabel('Frequency')
-        #     plt.xlabel('Time')
-        #     plt.ylim(0,30)
-        #     plt.savefig(f'222{str(i)}.png')
+            channel_data[i] = channel_data[i] ##### scale 조정 필요한가?
+            f, t, Zxx = signal.stft(channel_data[i], fs=fs, nperseg=wlen, noverlap=wlen-hop)
+            xx.append(torch.tensor(Zxx))
 
-        #     if i == 10:
-        #         break
-
-        raise
+        self.x = torch.stack(xx, dim=1)
         self.in_weights = make_weights_for_balanced_classes(self.y)
        
         # self.x = torch.sum(self.x, axis=1)
@@ -158,9 +122,9 @@ class Dataset(Dataset) :
                 o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
                 total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
-        # data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
-        # o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
-        # total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+        data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
+        o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
+        total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
         # for sub in list_: ###################################################
         #     for d in range(1,3): 
@@ -181,10 +145,12 @@ class Dataset(Dataset) :
         total_list_x = []
         total_list_y = []
     
-        data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
-        o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
+        # data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
+        # o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
+        # total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
+        data_name = self.make_name("Single", None, args.class_num, args.expt, 1, str(args.test_subj), ".npz")
+        o_list = np.load(args.path + data_name)
         total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
-    
         
         # for sub in list_: ################################################### 이게 최선인가여.. 맘에 안들어.
         #     for d in range(2,3): #(1,3)
@@ -193,7 +159,7 @@ class Dataset(Dataset) :
         #         total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 
         for sub in list_: ################################################### 
-            for d in range(1,3): 
+            for d in range(2,3): 
                 data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, d, str(sub), "_train.npz")
                 o_list = np.load(args.path + data_name)
                 total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
@@ -211,7 +177,7 @@ class Dataset(Dataset) :
         total_list_y = []
 
         for sub in list_ :
-            data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_train.npz")
+            data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 2, str(sub), "_val.npz")
             o_list = np.load(args.path + data_name)
             total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
 

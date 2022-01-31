@@ -7,8 +7,9 @@ import pandas as pd
 from get_args import Args
 from utils import *
 from Model.model_maker import ModelMaker
-from trainer_dependent import TrainMaker
-from trainer_dependent_shallow import TrainMaker_shallow
+# from trainer.trainer_dependent import TrainMaker
+from trainer.trainer_dependent_spectrogram import TrainMaker
+from trainer.trainer_dependent_shallow import TrainMaker_shallow
 import wandb
 from torch.utils.data import Dataset, ConcatDataset
 
@@ -31,7 +32,7 @@ def main():
     
     # Build model
     model = ModelMaker(args_class).model
-    
+
     # Make trainer
     if args.model == "ShallowConvNet":
         train_set1 = BcicDataset_window(data, window_num=0)
@@ -59,3 +60,18 @@ def main():
 
 if __name__ == "__main__" :
     main()
+
+class BcicDataset_window(Dataset):
+    def __init__(self, dataset, window_num):
+        self.dataset = dataset
+        self.len = len(dataset)
+        self.window_num = window_num
+
+    def __len__(self):
+        return self.len
+        
+    def __getitem__(self, idx):
+        X, y = self.dataset.__getitem__(idx)
+        return X[:,self.window_num*125:self.window_num*125+1000], y
+        # X, y, idx = self.dataset.__getitem__(idx)
+        # return X[:,:,self.window_num*125:self.window_num*125+1000], y, idx

@@ -23,7 +23,7 @@ class Args:
         parser.add_argument("--seed", default=1004, type=int)
 
         #---# Model #---#
-        parser.add_argument("--model", type=str, default="EEGNet") #DeepConvNet, ShallowConvNet, EEGNet
+        parser.add_argument("--model", type=str, default="CRL") #DeepConvNet, ShallowConvNet, EEGNet
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
         ### Motion sickness

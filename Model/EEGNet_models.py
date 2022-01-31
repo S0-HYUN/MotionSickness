@@ -68,12 +68,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    
-    model = EEGNet(4, 22, 1125) # n_classes, n_channel, n_timewindow
+    model = EEGNet(3, 28, 750)
+    # model = EEGNet(4, 22, 1125) # n_classes, n_channel, n_timewindow for bcic
     # pred = model(torch.zeros(50, 1, 20, 250))
     # print(model)
     
     from pytorch_model_summary import summary
-    print(summary(model, torch.rand((1, 1, 22, 1125)), show_input=False))
+    # print(summary(model, torch.rand((1, 1, 22, 1125)), show_input=False)) for bcic
+    print(summary(model, torch.rand((1, 1, 28, 750)), show_input=True))
+    # print(summary(model, torch.rand((1, 1, 28, 750)), show_input=False))
     # model input = torch.rand((1,1,32,200))
     # batch size, channel, eeg electrodes, time window 
