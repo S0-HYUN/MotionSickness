@@ -26,9 +26,9 @@ def main():
     df = pd.DataFrame(columns = ['test_subj', 'lr', 'wd', 'acc', 'f1', 'loss']); idx = 0
 
     # Load data
-    data = data_loader_active.Dataset(args, phase="train")    
-    data_valid = data_loader_active.Dataset(args, phase="valid")
-    data_test = data_loader_active.Dataset(args, phase="test")
+    data = data_loader.data_loader_active.Dataset(args, phase="train")    
+    data_valid = data_loader.data_loader_active.Dataset(args, phase="valid")
+    data_test = data_loader.data_loader_active.Dataset(args, phase="test")
     
     # Build model
     model = ModelMaker(args_class).model

@@ -41,7 +41,7 @@ class TrainMaker:
             self.lr = self.args.lr
             self.wd = self.args.wd
             self.channel_num = self.args.channel_num
-            self.device = gpu_checking()
+            self.device = gpu_checking(args)
             self.history_mini_batch = defaultdict(list)
             # if args.mode == "train":
             #     self.trainer = self.__make_trainer(args=args,
@@ -74,7 +74,7 @@ class TrainMaker:
                 x = x.reshape(x.shape[0], 1, self.channel_num, -1) # [1, 1, 25, 750]
                 pred = self.model(x.to(device=self.device).float())
 
-                pred_prob = F.softmax(pred, dim=-1) 
+                pred_prob = F.softmax(pred, dim=-1)
                 loss = self.criterion(pred, y.flatten().long().to(device=self.device)) 
                 # if (idx+1) % interval == 0: print('[Epoch{}, Step({}/{})] Loss:{:.4f}'.format(e+1, idx+1, len(data_loader.dataset) // self.args.batch_size, epoch_loss / (idx + 1)))
                 
@@ -106,7 +106,9 @@ class TrainMaker:
             cm = confusion_matrix(true_label_acc, pred_label_acc)
             epoch_loss = epoch_loss / (idx+1)
             
-            self.scheduler.step()
+
+            if self.args.scheduler != None:
+                self.scheduler.step()
             print('\nEpoch{} Training, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}'.format(e+1, f1, acc, epoch_loss))
             # print(cm)
 
@@ -168,8 +170,8 @@ class TrainMaker:
                 true_label = y.numpy()
                 b = x.shape[0]
 
-                # x = x.reshape(b, 1, self.channel_num, -1)
-                x = torch.unsqueeze(x, 1)
+                x = x.reshape(b, 1, self.channel_num, -1)
+                # x = torch.unsqueeze(x, 1)
                 # x = x.permute(0,1,3,2)
 
                 pred = self.model(x.to(device=self.device).float())            

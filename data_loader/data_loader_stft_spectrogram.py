@@ -50,7 +50,7 @@ class Dataset(Dataset) :
 
         from scipy import signal
         fs = 250 # sampling frequency of the x time series
-        wlen = 64
+        wlen = 125 #64
         hop = 14
         nfft = 512
         # f, t, Zxx = signal.stft(self.x, fs, nperseg=1000)
@@ -77,14 +77,29 @@ class Dataset(Dataset) :
         # f, t, Sxx = signal.spectrogram(channel_data[0], fs=fs, nperseg=wlen, window='hamming', noverlap=wlen-hop)
         for i in range(args.channel_num) : #args.channel_num
             plt.clf()
-            channel_data[i] = channel_data[i] * (1e+1)
-            f, t, Sxx = signal.spectrogram(channel_data[i], fs=fs, window='hamming', noverlap=wlen-hop)
+            # channel_data[i] = channel_data[i] * (1e+3)
+            # f, t, Sxx = signal.spectrogram(channel_data[i], fs=fs, window='hamming', noverlap=wlen-hop)
+            f, t, Sxx = signal.spectrogram(channel_data[i], fs=fs, nperseg=wlen, noverlap=wlen-hop)
             # print(Sxx.shape); print(f.shape); print(t.shape)
-            plt.pcolormesh(t, f, Sxx, shading='gouraud') 
+            # plt.pcolormesh(t, f, 10*np.log10(np.abs(Sxx)), shading='gouraud')
+            plt.pcolormesh(t, f, 10*np.log10(np.abs(Sxx)), shading='flat') 
             plt.colorbar()
-            plt.clim(0,10)
+            # plt.clim(0,0.5)
+            # plt.ylim(0,30)
             plt.ylabel('Frequency'); plt.xlabel('Time')
-            plt.savefig(f'channel{str(i+1)}.png')
+            plt.savefig(f'spectrogram_channel{str(i+1)}_.png')
+
+            ###
+            '''plt.clf()
+            f, t, Sxx = signal.stft(channel_data[i], fs=fs, nperseg=wlen, noverlap=wlen-hop)
+            # print(Sxx.shape); print(f.shape); print(t.shape)
+            plt.pcolormesh(t, f, np.abs(Sxx), shading='gouraud') 
+            plt.colorbar()
+            # plt.clim(0,0.5)
+            plt.ylim(0,30)
+            plt.ylabel('Frequency'); plt.xlabel('Time')
+            plt.savefig(f'stft_channel{str(i+1)}.png')'''
+            
         
         # print("======================================")
         # for i in range(Zxx.shape[0]) :

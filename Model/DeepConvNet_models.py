@@ -144,7 +144,7 @@ class ShallowConvNet(nn.Module):
         return x
 
 class ShallowConvNet_dk(nn.Module):
-    def __init__(self,n_classes,input_ch,input_time):
+    def __init__(self, n_classes, input_ch, input_time):
         super(ShallowConvNet_dk, self).__init__()
         self.num_filters = 40
         self.n_classes = n_classes
@@ -156,7 +156,8 @@ class ShallowConvNet_dk(nn.Module):
                                      nn.AvgPool2d(kernel_size=(1, 75), stride=(1, 1), padding=0),
                                      log(),
                                      nn.Dropout(p=0.5),
-                                     nn.Conv2d(self.num_filters, 4, kernel_size=(1, 30),  stride=(1, 1), dilation=(1, 15)),
+                                     nn.Conv2d(self.num_filters, 3, kernel_size=(1, 30),  stride=(1, 1), dilation=(1, 15)),
+                                    #  nn.Conv2d(self.num_filters, 4, kernel_size=(1, 30),  stride=(1, 1), dilation=(1, 15)),
                                      nn.LogSoftmax(dim=1)
                                      )
 
@@ -166,8 +167,8 @@ class ShallowConvNet_dk(nn.Module):
 
     def forward(self, x):
         output = self.convnet(x)
-        output = output.view(output.size()[0], self.n_classes,self.out_size)
-
+        output = output.view(output.size()[0], self.n_classes, self.out_size)
+        
         return output
     '''def __init__(self, n_classes, input_ch, batch_norm=True, batch_norm_alpha=0.1):
         super(ShallowConvNet_dk, self).__init__()
@@ -252,10 +253,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # model = DeepConvNet(2,32,200)
     # model = ShallowConvNet_dk(1,30,725)
-    model = ShallowConvNet_dk(1,22,1125)
+    # model = ShallowConvNet_dk(1,22,1125)
+    model= ShallowConvNet_dk(3,28,750)
+    # model = ShallowConvNet_dk(4,22,1000)
     
     # model = FcClfNet(embedding_net)
     from pytorch_model_summary import summary
 
-    # print(summary(model, torch.zeros((1, 1, 28, 750)), show_input=False))
-    print(summary(model, torch.zeros((1, 1, 22, 1125)), show_input=False))
+    print(summary(model, torch.zeros((1, 1, 28, 750)), show_input=False))
+    # print(summary(model, torch.zeros((1, 1, 22, 1000)), show_input=False))

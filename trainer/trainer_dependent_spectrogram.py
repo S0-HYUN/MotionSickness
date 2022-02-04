@@ -21,7 +21,7 @@ from collections import defaultdict
 import wandb
 from utils_drawing import visualizer
 
-class TrainMaker:
+class TrainMaker_spectrogram:
     def __init__(self, args, model, data, data_v=None):
             self.args = args
             self.model = model
@@ -106,7 +106,8 @@ class TrainMaker:
             cm = confusion_matrix(true_label_acc, pred_label_acc)
             epoch_loss = epoch_loss / (idx+1)
             
-            # self.scheduler.step()
+            if self.args.scheduler != None:
+                self.scheduler.step()
             print('\nEpoch{} Training, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}'.format(e+1, f1, acc, epoch_loss))
             # print(cm)
 
@@ -132,14 +133,14 @@ class TrainMaker:
             # self.writer.add_scalar('Valid/Acc', acc_v, e)
             # self.writer.flush()
 
-            # wandb.log({"loss": epoch_loss,
-            #             "acc": acc,
-            #             "f1":f1,
-            #             "vloss": loss_v,
-            #             "vacc": acc_v,
-            #             "vf1":f1_v,
-            #             # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
-            # })
+            wandb.log({"loss": epoch_loss,
+                        "acc": acc,
+                        "f1":f1,
+                        "vloss": loss_v,
+                        "vacc": acc_v,
+                        "vf1":f1_v,
+                        # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
+            })
         # return acc, f1, cm, epoch_loss
         # return f1_v, acc_v, cm_v, loss_v
         return prev_f1, prev_v, cm_v, prev_loss

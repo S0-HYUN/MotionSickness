@@ -17,6 +17,7 @@
 /features_EEGNet_10
 /output_bcic
 /output_bcic_modi
+/spectrogram_images
 
 Model/__pycache__/DCAN_models.cpython-38.pyc
 Model/__pycache__/DeepConvNet_models.cpython-38.pyc

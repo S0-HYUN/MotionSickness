@@ -42,8 +42,10 @@ class CRLNet(nn.Module):
             nn.MaxPool2d(kernel_size=(13,1))
         )
 
-        # self.clf = nn.Linear(3304, 128)
-        # self.clf2 = nn.Linear(128, self.n_classes)
+        # self.clf = nn.Linear(3304, 126)
+        # self.clf2 = nn.Linear(126, self.n_classes)
+        
+        # or
         self.clf = nn.Linear(3304, self.n_classes)
 
     def forward(self, x):

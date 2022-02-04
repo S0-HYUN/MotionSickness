@@ -7,8 +7,6 @@ import pandas as pd
 from get_args import Args
 from utils import *
 from Model.model_maker import ModelMaker
-from trainer_dependent import TrainMaker
-from trainer_dependent_shallow import TrainMaker_shallow
 import wandb
 from torch.utils.data import Dataset, ConcatDataset
 

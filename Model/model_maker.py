@@ -16,7 +16,7 @@ class ModelMaker:
         self.flag = 0 
         # create_folder(args.save_path) # 필요없음
     
-        self.device = gpu_checking()
+        self.device = gpu_checking(args)
         self.model = self.__build_model(args)
     
     def __build_model(self, args):
@@ -28,7 +28,7 @@ class ModelMaker:
             if args.model == 'DeepConvNet':
                 model = DeepConvNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device) 
             elif args.model == 'ShallowConvNet':
-                model = ShallowConvNet_dk(args.class_num, args.channel_num, 1000).to(device = self.device)
+                model = ShallowConvNet_dk(args.class_num, args.channel_num, 750).to(device = self.device) #1000
                 # model = ShallowConvNet_dk(args.class_num, args.channel_num).to(device = self.device)
             elif args.model == 'EEGNet':
                 model = EEGNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device)

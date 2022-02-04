@@ -12,7 +12,7 @@ import pandas as pd
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 import os
-from utils import *
+# from utils import *
 from loss.ND_Crossentropy import CrossentropyND, TopKLoss
 from loss.focalloss import *
 from loss.label_smoothing import LabelSmoothingCrossEntropy
@@ -43,7 +43,7 @@ class TrainMaker_shallow:
             self.lr = self.args.lr
             self.wd = self.args.wd
             self.channel_num = self.args.channel_num
-            self.device = gpu_checking()
+            self.device = gpu_checking(args)
             self.history_mini_batch = defaultdict(list)
             # if args.mode == "train":
             #     self.trainer = self.__make_trainer(args=args,

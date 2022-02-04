@@ -2,13 +2,14 @@ from sys import stderr
 from scipy.signal.windows.windows import exponential
 from torch.optim import optimizer
 import torch
-import data_loader.data_loader_stft
 import pandas as pd
 from get_args import Args
 from utils import *
+import data_loader.data_loader_active
+import data_loader.data_loader_stft
 from Model.model_maker import ModelMaker
-# from trainer.trainer_dependent import TrainMaker
-from trainer.trainer_dependent_spectrogram import TrainMaker
+from trainer.trainer_dependent import TrainMaker
+# from trainer.trainer_dependent_spectrogram import TrainMaker_spectrogram
 from trainer.trainer_dependent_shallow import TrainMaker_shallow
 import wandb
 from torch.utils.data import Dataset, ConcatDataset
@@ -17,28 +18,34 @@ def main():
     # wandb.init(project="my-test-project", entity="sohyun")
     args_class = Args()
     args = args_class.args
- 
+
     # Fix seed
     if args.seed:
-        fix_random_seed(args) 
+        fix_random_seed(args)
     
     # Save a file 
     df = pd.DataFrame(columns = ['test_subj', 'lr', 'wd', 'epoch', 'acc', 'f1', 'loss']); idx = 0
 
     # Load data
-    data = data_loader.data_loader_stft.Dataset(args, phase="train")
-    data_valid = data_loader.data_loader_stft.Dataset(args, phase="valid")
-    # data_test = data_loader.data_loader_stft.Dataset(args, phase="test")
-    
+    if args.model == "CRL":
+        data = data_loader.data_loader_stft.Dataset(args, phase="train")
+        data_valid = data_loader.data_loader_stft.Dataset(args, phase="valid")
+        # data_test = data_loader.data_loader_stft.Dataset(args, phase="test")
+    else :
+        data = data_loader.data_loader_active.Dataset(args, phase="train")
+        data_valid = data_loader.data_loader_active.Dataset(args, phase="valid")
+        # data_valid = data_loader.data_loader_active.Dataset(args, phase="test")
+
     # Build model
     model = ModelMaker(args_class).model
 
     # Make trainer
     if args.model == "ShallowConvNet":
         train_set1 = BcicDataset_window(data, window_num=0)
-        train_set2 = BcicDataset_window(data, window_num=1)
+        train_set2 = BcicDataset_window(data, window_num=1) # train_set1.dataset.x.shape
         train_set = ConcatDataset([train_set1, train_set2])
-        args.one_bundle = 1000
+        args.one_bundle = 750 #1000
+        print(data_valid.x.shape); raise
         trainer = TrainMaker_shallow(args, model, train_set, data_valid)
     else:
         trainer = TrainMaker(args, model, data, data_valid)
@@ -56,10 +63,8 @@ def main():
     elif args.mode ==  "test":
         f1_v, acc_v, cm_v, loss_v = trainer.evaluation(data_test)
 
-    df.to_csv(f'./csvs/2201181200_bcic_dependent_results_{args.model}_subj{args.test_subj}.csv', header = True, index = False)
-
-if __name__ == "__main__" :
-    main()
+    current_time = get_time()
+    df.to_csv(f'./csvs/{current_time}_MS_independent_results_{args.model}_subj{args.test_subj}.csv', header = True, index = False)
 
 class BcicDataset_window(Dataset):
     def __init__(self, dataset, window_num):
@@ -75,3 +80,6 @@ class BcicDataset_window(Dataset):
         return X[:,self.window_num*125:self.window_num*125+1000], y
         # X, y, idx = self.dataset.__getitem__(idx)
         # return X[:,:,self.window_num*125:self.window_num*125+1000], y, idx
+
+if __name__ == "__main__" :
+    main()
