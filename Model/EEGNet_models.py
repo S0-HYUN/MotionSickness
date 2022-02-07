@@ -32,7 +32,6 @@ class EEGNet(nn.Module):
     
         self.convnet.eval()
         out = self.convnet(torch.zeros(1, 1, input_ch, input_time))
-        # print("=======", out)
         self.n_outputs = out.size()[1] * out.size()[2] * out.size()[3]
 
         self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes), nn.Dropout(p=0.2))  ####################### classifier 
@@ -75,7 +74,7 @@ if __name__ == '__main__':
     
     from pytorch_model_summary import summary
     # print(summary(model, torch.rand((1, 1, 22, 1125)), show_input=False)) for bcic
-    print(summary(model, torch.rand((1, 1, 28, 750)), show_input=True))
+    print(summary(model, torch.rand((256, 1, 28, 750)), show_input=True))
     # print(summary(model, torch.rand((1, 1, 28, 750)), show_input=False))
     # model input = torch.rand((1,1,32,200))
     # batch size, channel, eeg electrodes, time window 

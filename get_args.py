@@ -2,7 +2,6 @@ import os
 import argparse
 import datetime
 from random import choice
-
 from utils import create_folder, prepare_folder
 
 class Args:
@@ -21,9 +20,13 @@ class Args:
         parser.add_argument("--mode", default="train", choices=["train", "test"])
         # parser.add_argument("--mode", default="train", choices=["train", "test"])
         parser.add_argument("--seed", default=1004, type=int)
+        parser.add_argument("--DA", default=False, type=bool)
+        if parser.parse_known_args()[0].DA == True:
+            parser.add_argument('--da_epoch', type=int, default=100, required=True)
+            parser.add_argument('--da_lr', type=float, default=1e-4, required=True)
 
         #---# Model #---#
-        parser.add_argument("--model", type=str, default="CRL") #DeepConvNet, ShallowConvNet, EEGNet
+        parser.add_argument("--model", type=str, default="EEGNet", choices=['DeepConvNet', 'ShallowConvNet', 'EEGNet', 'CRL']) #DeepConvNet, ShallowConvNet, EEGNet, CRL
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
         ### Motion sickness
@@ -38,6 +41,7 @@ class Args:
         parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
         parser.add_argument("--save_folder", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
         parser.add_argument("--load_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
+        parser.add_argument("--ft_folder", type=str, default="/opt/workspace/xohyun/MS_codes/train_da/") # for fine-tuning
 
         #---# Train #---#
 
@@ -67,10 +71,10 @@ class Args:
 
         parser.add_argument("--metrics", type=list, default=["loss", "acc"])
 
-        parser.add_argument("--lr", type=float, default=0.000625) # 1e-3
-        parser.add_argument("--wd", type=float, default=0) # 1e-3
+        parser.add_argument("--lr", type=float, default=1e-4) # 1e-3 #bcic:0.000625
+        parser.add_argument("--wd", type=float, default=1e-4) # 1e-3
 
-        parser.add_argument("--batch_size", type=int, default=8)      # 512
+        parser.add_argument("--batch_size", type=int, default=256)      # 512
         parser.add_argument("--epoch", type=int, default=100)          # 3000
         parser.add_argument("--one_bundle", type=int, default=750)     # int(1500/2) / 1125
         parser.add_argument("--channel_num", type=int, default=28)      # 28 / 22
@@ -80,25 +84,36 @@ class Args:
             parser.add_argument("--remove_subj", type=list, default=[1,2,4,14,16,17,19])
         else:
             parser.add_argument("--remove_subj", type=list, default=[4,8,11,17]) 
-        parser.add_argument("--test_subj", type=int, default=13)
+        parser.add_argument("--test_subj", type=int, default=12)
         parser.add_argument("--test_size", type=float, default=0.5); # 0.05
         # parser.add_argument("-")
     
         #---# Device #---#
-        parser.add_argument('--device', default=2, help="cpu or gpu number")
+        parser.add_argument("--device", default=2, help="cpu or gpu number")
 
         args = parser.parse_args()
         return args
 
     def set_save_path(self):
-        save_dir = os.path.join(self.args.save_folder, str(self.args.test_subj))
-        create_folder(save_dir)
-        
-        if self.args.mode == "train":
-            self.args.save_path = os.path.join(save_dir, str(len(os.listdir(save_dir))+1))
-            create_folder(self.args.save_path)
-            print(f"=== save_path : [{self.args.save_path}] ===")
+        save_dir = os.path.join(self.args.save_folder, str(self.args.test_subj)); create_folder(save_dir)
+        self.args.save_path = os.path.join(save_dir, str(len(os.listdir(save_dir))+1)); create_folder(self.args.save_path)
+        print(f"=== save_path === \n [{self.args.save_path}]")
 
-    def get_load_path(self):
-        save_pth = os.path.join(self.args.load_path, str(self.args.test_subj))
+    def set_save_path_DA(self):
+        save_dir = os.path.join(self.args.ft_folder, str(self.args.test_subj)); create_folder(save_dir)
+        self.args.save_path = os.path.join(save_dir, str(len(os.listdir(save_dir))+1)); create_folder(self.args.save_path)
+        print(f"=== save_path for DA === \n [{self.args.save_path}]")
+
+    def get_load_path(self, first=True):
+        if first:
+            save_pth = os.path.join(self.args.load_path, str(self.args.test_subj))
+        else:
+            save_pth = self.args.load_path
+        # save_pth = os.path.join(self.args.load_path, str(self.args.test_subj))
         self.args.load_path = os.path.join(save_pth, str(len(os.listdir(save_pth))))
+        print(f"+++ load_path : [{self.args.load_path}] +++")
+    
+    def get_load_path_DA(self):
+        save_pth = os.path.join(self.args.ft_folder, str(self.args.test_subj))
+        self.args.load_path = os.path.join(save_pth, str(len(os.listdir(save_pth))))
+        print(f"+++ load_path : [{self.args.load_path}] +++")

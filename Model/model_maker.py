@@ -9,11 +9,11 @@ import importlib
 import re
 
 class ModelMaker:
-    def __init__(self, args_class=None):
+    def __init__(self, args_class=None, first=True):
         print("\nModel setting...")
         self.args_class = args_class
         args = args_class.args
-        self.flag = 0 
+        self.first = first
         # create_folder(args.save_path) # 필요없음
     
         self.device = gpu_checking(args)
@@ -21,10 +21,9 @@ class ModelMaker:
     
     def __build_model(self, args):
         model = ''
-        if args.mode == 'train':
-            if self.flag == 0:
-                self.args_class.set_save_path() # setting save_path 
-                self.flag == 1
+
+        if self.first == True and args.mode == "train":
+            self.args_class.set_save_path() # setting save_path
             if args.model == 'DeepConvNet':
                 model = DeepConvNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device) 
             elif args.model == 'ShallowConvNet':
@@ -35,10 +34,32 @@ class ModelMaker:
             elif args.model == 'CRL':
                 model = CRLNet(args.class_num, args.channel_num).to(device = self.device)
             write_pickle(os.path.join(args.save_path, "model.pk"), model)
-        else:
-            self.args_class.get_load_path()
-            print(f"{args.load_path}에서 pretrained_model call")           
+
+        elif args.DA == False and args.mode == "test":
+            self.args_class.get_load_path(first=True)
+            print(f"{args.load_path}에서 pretrained_model call")
             model = pretrained_model(args.load_path) #load_path
+            
+        elif args.DA == True and args.mode == "train":
+            self.args_class.get_load_path(first=True)
+            print(f"{args.load_path}에서 pretrained_model call")
+            print(args.load_path)
+            model = pretrained_model(args.load_path) #load_path
+            self.args_class.set_save_path_DA() 
+            print("----", args.save_path)
+            write_pickle(os.path.join(args.save_path, "model.pk"), model)
+        
+        # elif args.DA == True and args.mode == "train":
+        #     self.args_class.get_load_path(first=True)
+        #     print(f"{args.load_path}에서 pretrained_model call")
+        #     model = pretrained_model(args.load_path) #load_path
+        #     print("여기 통과2")
+    
+        # for fine-tuning
+        elif args.DA == True and args.mode == "test":
+            self.args_class.get_load_path_DA()
+            print(f"{args.load_path}에서 pretrained_model call")           
+            model = pretrained_model(args.load_path)
 
         return model
 
