@@ -10,12 +10,14 @@ import re
 
 class ModelMaker:
     def __init__(self, args_class=None, first=True):
+        '''
+        first: model setting이 처음인지 유무
+        '''
         print("\nModel setting...")
         self.args_class = args_class
         args = args_class.args
         self.first = first
-        # create_folder(args.save_path) # 필요없음
-    
+
         self.device = gpu_checking(args)
         self.model = self.__build_model(args)
     
@@ -36,17 +38,18 @@ class ModelMaker:
             write_pickle(os.path.join(args.save_path, "model.pk"), model)
 
         elif args.DA == False and args.mode == "test":
-            self.args_class.get_load_path(first=True)
+            self.args_class.get_load_path()
             print(f"{args.load_path}에서 pretrained_model call")
-            model = pretrained_model(args.load_path) #load_path
+            model = pretrained_model(args.load_path)
             
         elif args.DA == True and args.mode == "train":
-            self.args_class.get_load_path(first=True)
+            # load
+            self.args_class.get_load_path()
             print(f"{args.load_path}에서 pretrained_model call")
-            print(args.load_path)
-            model = pretrained_model(args.load_path) #load_path
+            model = pretrained_model(args.load_path)
+            
+            # save
             self.args_class.set_save_path_DA() 
-            print("----", args.save_path)
             write_pickle(os.path.join(args.save_path, "model.pk"), model)
         
         # elif args.DA == True and args.mode == "train":

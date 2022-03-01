@@ -97,19 +97,15 @@ class Args:
     def set_save_path(self):
         save_dir = os.path.join(self.args.save_folder, str(self.args.test_subj)); create_folder(save_dir)
         self.args.save_path = os.path.join(save_dir, str(len(os.listdir(save_dir))+1)); create_folder(self.args.save_path)
-        print(f"=== save_path === \n [{self.args.save_path}]")
+        print(f"=== save_path === [{self.args.save_path}]")
 
     def set_save_path_DA(self):
         save_dir = os.path.join(self.args.ft_folder, str(self.args.test_subj)); create_folder(save_dir)
         self.args.save_path = os.path.join(save_dir, str(len(os.listdir(save_dir))+1)); create_folder(self.args.save_path)
-        print(f"=== save_path for DA === \n [{self.args.save_path}]")
+        print(f"=== save_path for DA === [{self.args.save_path}]")
 
-    def get_load_path(self, first=True):
-        if first:
-            save_pth = os.path.join(self.args.load_path, str(self.args.test_subj))
-        else:
-            save_pth = self.args.load_path
-        # save_pth = os.path.join(self.args.load_path, str(self.args.test_subj))
+    def get_load_path(self):
+        save_pth = os.path.join(self.args.load_path, str(self.args.test_subj))
         self.args.load_path = os.path.join(save_pth, str(len(os.listdir(save_pth))))
         print(f"+++ load_path : [{self.args.load_path}] +++")
     

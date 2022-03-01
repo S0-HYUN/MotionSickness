@@ -60,18 +60,17 @@ def main():
         # else:
         #     df.loc[idx] = [args.test_subj, args.lr, args.wd, args.epoch, acc_v, f1_v, loss_v.cpu().numpy()]
         
-    elif args.mode ==  "test":
+    elif args.DA == False and args.mode == "test":
         f1_v, acc_v, cm_v, loss_v = trainer.evaluation(data_test)
         
-    if args.DA == True:
-        model = ModelMaker(args_class, first=False).model
-        
+    if args.DA == True:    
         if args.mode == "train":
+            model = ModelMaker(args_class, first=False).model
             data_da = data_loader.data_loader_active.Dataset(args, phase="DA")
             trainer = TrainMaker(args, model, data_da)
             f1_v, acc_v, cm_v, loss_v = trainer.training()
         else:
-            data_test_da = data_loader.data_loader_active.Dataset(args, pahse="DA_test")
+            data_test_da = data_loader.data_loader_active.Dataset(args, phase="DA_test")
             f1_v, acc_v, cm_v, loss_v = trainer.evaluation(data_test_da)
 
     current_time = get_time()
