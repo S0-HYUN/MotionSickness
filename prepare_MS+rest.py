@@ -6,21 +6,20 @@ import mne
 from sklearn.model_selection import train_test_split
 from utils import *
 from sklearn.preprocessing import MinMaxScaler
+import re
 
 class Load_Data() :
     def __init__(self, args) :
-        datalist = os.listdir(args.data_path)
-        datalist = sorted(datalist)
+        datalist = os.listdir(args.data_path); datalist = sorted(datalist)
+        datalist_rest = os.listdir(args.restdata_path); datalist_rest = sorted(datalist_rest)
 
         ch_num = args.channel_num + 1
 
         for i in range(len(datalist)) : 
-            if i % 2 == 0 : expt = 1 
-            else : expt = 2 
-
-            if (i % 4 == 0) or (i % 4 == 1) : day = 1
-            else : day = 2
-            subj = (i // 4) + 1
+            numbers = re.sub(r'[^0-9]', '', datalist[i]) # Extract only numbers
+            subj = int(numbers[:2])
+            day = int(numbers[2])
+            expt = int(numbers[3])
             
             print(".....[" + datalist[i] + "] loading.....")
             o_data = np.array(pd.read_csv(args.data_path + datalist[i], sep=',', header=0))
@@ -28,10 +27,19 @@ class Load_Data() :
             naming(o_data_f)
             o_data_f.drop(['Time', 'ECG.(uV)', 'Resp', 'PPG', 'GSR', 'Packet Counter(DIGITAL)'], axis =  1, inplace = True) # 지우는 열 -> time도 포함시켜야 하는지 고민. 우선 data_loader.py에서 Time이용해서 조절하기 때문에 냅둠.
             
+            o_data_rest = np.array(pd.read_csv(args.restdata_path + datalist_rest[i], sep=',', header=0))
+            o_data_f_rest = pd.DataFrame(o_data_rest)
+            naming(o_data_f_rest)
+            o_data_f_rest.drop(['Time', 'ECG.(uV)', 'Resp', 'PPG', 'GSR', 'Packet Counter(DIGITAL)'], axis =  1, inplace = True) 
+
             #---# downsampling -> 250 #---#
             o_data_f = o_data_f.assign(g = o_data_f.index % 2).query('g==0')    # 0으로 할건지 1로 할 건지인데, 0으로 해야 시작시간이 바르기 때무네..
             o_data_f.drop(['g'], axis = 1, inplace = True)                      # g열 버림
             o_data_f.reset_index(drop = True, inplace = True)                   # 인덱스 재설정 0부터~~
+
+            o_data_f_rest = o_data_f_rest.assign(g = o_data_f_rest.index % 2).query('g==0')    # 0으로 할건지 1로 할 건지인데, 0으로 해야 시작시간이 바르기 때무네..
+            o_data_f_rest.drop(['g'], axis = 1, inplace = True)                      # g열 버림
+            o_data_f_rest.reset_index(drop = True, inplace = True)                   # 인덱스 재설정 0부터~~
 
             #---# set class #---#
             if args.class_num == 2:
@@ -39,20 +47,25 @@ class Load_Data() :
             elif args.class_num == 3:
                 o_data_f['TRIGGER(DIGITAL)'] = o_data_f['TRIGGER(DIGITAL)'].apply(lambda x:0 if x <= args.score_list[0] else (2 if x >= args.score_list[1] else 1))
             
-            #---# visualization of each channel (check for trend) #---#
-            # from matplotlib import pyplot as plt
-            # plt.plot(np.arange(len(o_data_f.iloc[:,1])), o_data_f.iloc[:,1])
-            # plt.ylim(-1000, 1000)
-            # plt.savefig("./plots/202111300521_channel_minmax_check_column1_.png")
-
+            o_data_f_rest['TRIGGER(DIGITAL)'] = 0
+            print(o_data_f.shape)
+            print(o_data_f_rest.shape)
+          
             #---# changing scale and to_numpy #---#
             o_data_f.iloc[:,:-1] = o_data_f.iloc[:,:-1].apply(lambda x : x / 100)
-
+            o_data_f_rest.iloc[:,:-1] = o_data_f.iloc[:,:-1].apply(lambda x : x / 100)
+ 
             o_data = o_data_f.to_numpy()            # 다시 numpy 배열로
             cut = len(o_data) % args.one_bundle          # 나머지 부분 잘라내기 cut = len(o_data) % (one_bundle * ch_num) 여기 꼭 확인
+            o_data_rest = o_data_f_rest.to_numpy()
+            cut_rest = len(o_data_rest) % args.one_bundle
 
             o_data = o_data[:-int(cut)].reshape(-1, args.one_bundle, ch_num)
-            
+            o_data_rest = o_data_rest[:-int(cut_rest)].reshape(-1, args.one_bundle, ch_num)
+
+            #---# concat restdata #---#
+            o_data = np.concatenate((o_data, o_data_rest), axis=0)
+
             #---# bandpass filtering #---#
             b, t, c = o_data.shape
             o_data = mne.filter.filter_data(o_data.reshape(-1, ch_num).T, sfreq = 250, l_freq = args.lower_freq, h_freq = args.high_freq, picks = np.s_[1:-2]).T.reshape(b, t, c)
@@ -116,10 +129,11 @@ def main() :
     parser.add_argument("--high_freq", type=float, default=50); 
     parser.add_argument("--score_list", type=list, default=[1,6]); #[0,4] # [3] -> 0,1,2,3 /4,5,6,7,8,9     # [3,7] -> 0,1,2,3 / 4,5,6 / 7,8,9    # [1,6] -> 0,1 / 2,3,4,5 / 6,7,8,9
     parser.add_argument("--data_path", type=str, default='/opt/workspace/MS_DATA/PREPROCESSED_DATA/')
+    parser.add_argument("--restdata_path", type=str, default='/opt/workspace/MS_DATA/rest/')
     parser.add_argument("--channel_num", type=int, default=28)
     parser.add_argument("--class_num", type=int, default=3)
     parser.add_argument("--one_bundle", type=int, default=int(1500/2)) # 500hz -> 3초에 1500행
-    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789')
+    parser.add_argument("--output_path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789+rest')
     args = parser.parse_args()
     Load_Data(args)
 

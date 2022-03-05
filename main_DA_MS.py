@@ -40,7 +40,7 @@ def main():
     model = ModelMaker(args_class).model
     
     # Make trainer
-    if args.model == "ShallowConvNet":
+    if args.model == "ShallowConvNet": # 여기는 우선 다른쪽 container에서 실행
         train_set1 = BcicDataset_window(data, window_num=0)
         train_set2 = BcicDataset_window(data, window_num=1) # train_set1.dataset.x.shape
         train_set = ConcatDataset([train_set1, train_set2])
@@ -54,6 +54,10 @@ def main():
 
     if args.mode == "train":
         f1_v, acc_v, cm_v, loss_v = trainer.training() # fitting
+        # current_time = get_time()
+        # df.loc[idx] = [args.test_subj, args.lr, args.wd, args.epoch, acc_v, f1_v, loss_v]
+        # df.to_csv(f'./csvs/{current_time}_MS_DA_results_{args.model}_subj{args.test_subj}_train.csv', header = True, index = False)
+        
         # print(f"f1:{f1_v}, acc:{acc_v}, loss:{loss_v} \n {cm_v}")
         # if args.model == "ShallowConvNet":
         #     df.loc[idx] = [args.test_subj, args.lr, args.wd, args.epoch, acc_v, f1_v, loss_v]
@@ -61,21 +65,30 @@ def main():
         #     df.loc[idx] = [args.test_subj, args.lr, args.wd, args.epoch, acc_v, f1_v, loss_v.cpu().numpy()]
         
     elif args.DA == False and args.mode == "test":
+        data_test = data_loader.data_loader_active.Dataset(args, phase="test")
         f1_v, acc_v, cm_v, loss_v = trainer.evaluation(data_test)
-        
+        current_time = get_time()
+        df.loc[idx] = [args.test_subj, args.lr, args.wd, args.epoch, acc_v, f1_v, loss_v.cpu().numpy()]
+        df.to_csv(f'./csvs/{current_time}_MS_results_{args.model}_subj{args.test_subj}_test.csv', header = True, index = False)
+
     if args.DA == True:    
         if args.mode == "train":
             model = ModelMaker(args_class, first=False).model
             data_da = data_loader.data_loader_active.Dataset(args, phase="DA")
             trainer = TrainMaker(args, model, data_da)
             f1_v, acc_v, cm_v, loss_v = trainer.training()
+            current_time = get_time()
+            df.loc[idx] = [args.test_subj, args.lr, args.wd, args.epoch, acc_v, f1_v, loss_v]
+            df.to_csv(f'./csvs/{current_time}_MS_DA_results_{args.model}_subj{args.test_subj}_train.csv', header = True, index = False)
+
         else:
             data_test_da = data_loader.data_loader_active.Dataset(args, phase="DA_test")
             f1_v, acc_v, cm_v, loss_v = trainer.evaluation(data_test_da)
+            current_time = get_time()
+            df.loc[idx] = [args.test_subj, args.lr, args.wd, args.epoch, acc_v, f1_v, loss_v.cpu().numpy()]
+            df.to_csv(f'./csvs/{current_time}_MS_DA_results_{args.model}_subj{args.test_subj}_test.csv', header = True, index = False)
 
-    current_time = get_time()
-    df.to_csv(f'./csvs/{current_time}_MS_independent_results_{args.model}_subj{args.test_subj}.csv', header = True, index = False)
-
+    
 class BcicDataset_window(Dataset):
     def __init__(self, dataset, window_num):
         self.dataset = dataset

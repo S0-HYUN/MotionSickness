@@ -5,10 +5,12 @@
 /pytorch_active_learning
 /runs/
 /train/
+/train_da/
 /param/
 /Files_scale/
 /Files_scale_0_123_456789/
 /Files_scale_01_2345_6789/
+/Files_scale_01_2345_6789+rest/
 /Files_scale_raw_original/
 /Files_rest/
 /wandb

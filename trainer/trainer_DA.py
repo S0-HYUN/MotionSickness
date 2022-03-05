@@ -24,36 +24,38 @@ from utils_drawing import visualizer
 
 class TrainMaker:
     def __init__(self, args, model, data, data_v=None, DA=False):
-            self.args = args
-            self.model = model
-            self.data = data
+        self.args = args
+        self.model = model
+        self.data = data
+        self.data_v = None
+        if data_v:
             self.data_v = data_v # can be None
-            self.history = defaultdict(list)
-            self.history_mini_batch = defaultdict(list)
-            self.optimizer = getattr(torch.optim, self.args.optimizer)
-            self.channel_num = self.args.channel_num
-            self.device = gpu_checking(args)
+        self.history = defaultdict(list)
+        self.history_mini_batch = defaultdict(list)
+        self.optimizer = getattr(torch.optim, self.args.optimizer)
+        self.channel_num = self.args.channel_num
+        self.device = gpu_checking(args)
 
-            if DA == False:
-                self.writer = SummaryWriter(log_dir=f'./runs/lr{self.args.lr}_wd{self.args.wd}')
-                self.optimizer = self.optimizer(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
-                self.epoch = self.args.epoch
-                self.lr = self.args.lr
-                self.wd = self.args.wd
+        if DA == False:
+            self.writer = SummaryWriter(log_dir=f'./runs/lr{self.args.lr}_wd{self.args.wd}')
+            self.optimizer = self.optimizer(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
+            self.epoch = self.args.epoch
+            self.lr = self.args.lr
+            self.wd = self.args.wd
 
-            elif DA == True:
-                self.writer = SummaryWriter(log_dir=f'./runs/lr{self.args.lr}_wd{self.args.wd}')
-                self.optimizer = self.optimizer(self.model.parameters(), lr=self.args.da_lr)
-                self.epoch = self.args.da_epoch
-                self.lr = self.args.da_lr
-                self.wd = 0 ##이게 맞나?
+        elif DA == True:
+            self.writer = SummaryWriter(log_dir=f'./runs/lr{self.args.lr}_wd{self.args.wd}')
+            self.optimizer = self.optimizer(self.model.parameters(), lr=self.args.da_lr)
+            self.epoch = self.args.da_epoch
+            self.lr = self.args.da_lr
+            self.wd = 0 ##이게 맞나?
 
-            self.scheduler = self.__set_scheduler(args, self.optimizer)
-            self.criterion = self.__set_criterion(self.args.criterion)   
+        self.scheduler = self.__set_scheduler(args, self.optimizer)
+        self.criterion = self.__set_criterion(self.args.criterion)   
 
     def training(self, shuffle=True, interval=1000):
         prev_v = -10
-        sampler = torch.utils.data.WeightedRandomSampler(self.data.in_weights, replacement=True, num_samples=self.args.batch_size)
+        sampler = torch.utils.data.WeightedRandomSampler(self.data.in_weights, replacement=True, num_samples=self.data.x.shape[0])
         data_loader = DataLoader(self.data, batch_size=self.args.batch_size, sampler=sampler)
         
         for e in tqdm(range(self.epoch)):
