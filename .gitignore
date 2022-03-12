@@ -5,6 +5,7 @@
 /pytorch_active_learning
 /runs/
 /train/
+/train_PAST/
 /train_da/
 /param/
 /Files_scale/
