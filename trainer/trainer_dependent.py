@@ -106,7 +106,6 @@ class TrainMaker:
             cm = confusion_matrix(true_label_acc, pred_label_acc)
             epoch_loss = epoch_loss / (idx+1)
             
-
             if self.args.scheduler != None:
                 self.scheduler.step()
             print('\nEpoch{} Training, f1:{:.4f}, acc:{:.4f}, Loss:{:.4f}'.format(e+1, f1, acc, epoch_loss))

@@ -10,7 +10,7 @@ from get_args import Args
 import subprocess
 from utils import *
 from Model.model_maker import ModelMaker
-from trainer import TrainMaker
+from trainer.trainer_DA import TrainMaker
 import wandb
 
 def main():
@@ -34,7 +34,8 @@ def main():
     model = ModelMaker(args_class).model
     
     # Make trainer
-    trainer = TrainMaker(args, model, data, data_valid)
+    # trainer = TrainMaker(args, model, data, data_valid)
+    trainer = TrainMaker(args, model, data, None)
     
     # Prepare folder
     prepare_folder([args.param_path, args.runs_path])

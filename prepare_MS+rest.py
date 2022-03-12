@@ -124,7 +124,7 @@ def naming(df):
 
 def main() :
     parser = argparse.ArgumentParser(); 
-    parser.add_argument("--test_size", type=float, default=0.05); 
+    parser.add_argument("--test_size", type=float, default=0.1); 
     parser.add_argument("--lower_freq", type=float, default=0.5)
     parser.add_argument("--high_freq", type=float, default=50); 
     parser.add_argument("--score_list", type=list, default=[1,6]); #[0,4] # [3] -> 0,1,2,3 /4,5,6,7,8,9     # [3,7] -> 0,1,2,3 / 4,5,6 / 7,8,9    # [1,6] -> 0,1 / 2,3,4,5 / 6,7,8,9

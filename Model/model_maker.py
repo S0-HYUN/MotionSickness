@@ -29,24 +29,24 @@ class ModelMaker:
             if args.model == 'DeepConvNet':
                 model = DeepConvNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device) 
             elif args.model == 'ShallowConvNet':
-                model = ShallowConvNet_dk(args.class_num, args.channel_num, 750).to(device = self.device) #1000
-                # model = ShallowConvNet_dk(args.class_num, args.channel_num).to(device = self.device)
+                # model = ShallowConvNet_dk(args.class_num, args.channel_num, 750).to(device = self.device) #1000
+                model = ShallowConvNet_dk(args.class_num, args.channel_num).to(device = self.device)
             elif args.model == 'EEGNet':
                 model = EEGNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device)
             elif args.model == 'CRL':
                 model = CRLNet(args.class_num, args.channel_num).to(device = self.device)
-            write_pickle(os.path.join(args.save_path, "model.pk"), model)
+            write_pickle(os.path.join(args.save_path, f"model_{args.standard}.pk"), model)
 
         elif args.DA == False and args.mode == "test":
             self.args_class.get_load_path()
             print(f"{args.load_path}에서 pretrained_model call")
-            model = pretrained_model(args.load_path)
+            model = pretrained_model(args.load_path, args.standard)
             
         elif args.DA == True and args.mode == "train":
             # load
             self.args_class.get_load_path()
             print(f"{args.load_path}에서 pretrained_model call")
-            model = pretrained_model(args.load_path)
+            model = pretrained_model(args.load_path, args.standard)
             
             # save
             self.args_class.set_save_path_DA() 
@@ -62,7 +62,7 @@ class ModelMaker:
         elif args.DA == True and args.mode == "test":
             self.args_class.get_load_path_DA()
             print(f"{args.load_path}에서 pretrained_model call")           
-            model = pretrained_model(args.load_path)
+            model = pretrained_model(args.load_path, args.standard)
 
         return model
 
@@ -75,10 +75,10 @@ def read_pickle(path):
         data = pickle.load(f)
     return data
 
-def pretrained_model(save_path):
+def pretrained_model(save_path, standard):
     # print(f"S{args['subject']:02} is loaded.")
     try:
-        model = read_pickle(os.path.join(save_path, 'model.pk'))
+        model = read_pickle(os.path.join(save_path, f'model_{standard}.pk'))
     except FileNotFoundError:
         raise FileNotFoundError
     save_path, model = set_pretrained_path(save_path, model)

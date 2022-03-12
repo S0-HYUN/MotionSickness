@@ -144,32 +144,59 @@ class ShallowConvNet(nn.Module):
         return x
 
 class ShallowConvNet_dk(nn.Module):
-    def __init__(self, n_classes, input_ch, input_time):
+    def __init__(self, n_classes, input_ch, batch_norm=True, batch_norm_alpha=0.1):
         super(ShallowConvNet_dk, self).__init__()
-        self.num_filters = 40
+        self.batch_norm = batch_norm
+        self.batch_norm_alpha = batch_norm_alpha
         self.n_classes = n_classes
-
-        self.convnet = nn.Sequential(nn.Conv2d(1, self.num_filters, (1,25), stride=1),
-                                     nn.Conv2d(self.num_filters, self.num_filters, (input_ch, 1), stride=1,bias=False),
-                                     nn.BatchNorm2d(self.num_filters, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-                                     square(),
-                                     nn.AvgPool2d(kernel_size=(1, 75), stride=(1, 1), padding=0),
-                                     log(),
-                                     nn.Dropout(p=0.5),
-                                     nn.Conv2d(self.num_filters, 3, kernel_size=(1, 30),  stride=(1, 1), dilation=(1, 15)),
-                                    #  nn.Conv2d(self.num_filters, 4, kernel_size=(1, 30),  stride=(1, 1), dilation=(1, 15)),
-                                     nn.LogSoftmax(dim=1)
-                                     )
-
-        self.convnet.eval()
-        out = self.convnet(torch.zeros((1, 1, input_ch, input_time)))
-        self.out_size = out.size()[3]
-
+        n_ch1 = 40
+        if self.batch_norm:
+            self.layer1 = nn.Sequential(
+                nn.Conv2d(1, n_ch1, kernel_size=(1, 25), stride=1),
+                nn.Conv2d(n_ch1, n_ch1, kernel_size=(input_ch, 1), stride=1, bias=not self.batch_norm),
+                nn.BatchNorm2d(n_ch1,
+                               momentum=self.batch_norm_alpha,
+                               affine=True,
+                               eps=1e-5))
+        self.fc = nn.Linear(1760, n_classes)
+                                            
     def forward(self, x):
-        output = self.convnet(x)
-        output = output.view(output.size()[0], self.n_classes, self.out_size)
+        x = self.layer1(x)
+        x = torch.square(x)
+        x = torch.nn.functional.avg_pool2d(x, kernel_size = (1,75), stride =  (1,15))
+        x = torch.log(x)
+        x = x.flatten(1)
+        x = torch.nn.functional.dropout(x) # shape [1, 1760]
+        x = self.fc(x)
+        return x
+# class ShallowConvNet_dk(nn.Module):
+#     def __init__(self, n_classes, input_ch, input_time):
+#         super(ShallowConvNet_dk, self).__init__()
+#         self.num_filters = 40
+#         self.n_classes = n_classes
+
+#         self.convnet = nn.Sequential(nn.Conv2d(1, self.num_filters, (1,25), stride=1),
+#                                      nn.Conv2d(self.num_filters, self.num_filters, (input_ch, 1), stride=1,bias=False),
+#                                      nn.BatchNorm2d(self.num_filters, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+#                                      square(),
+#                                      nn.AvgPool2d(kernel_size=(1, 75), stride=(1, 1), padding=0),
+#                                      log(),
+#                                      nn.Dropout(p=0.5),
+#                                      nn.Conv2d(self.num_filters, 3, kernel_size=(1, 30),  stride=(1, 1), dilation=(1, 15)),
+#                                     #  nn.Conv2d(self.num_filters, 4, kernel_size=(1, 30),  stride=(1, 1), dilation=(1, 15)),
+#                                      nn.LogSoftmax(dim=1)
+#                                      )
+
+#         self.convnet.eval()
+#         out = self.convnet(torch.zeros((1, 1, input_ch, input_time)))
+#         self.out_size = out.size()[3]
+
+    # def forward(self, x):
+    #     output = self.convnet(x)
+    #     output = output.view(output.size()[0], self.n_classes, self.out_size)
         
-        return output
+    #     return output
+
     '''def __init__(self, n_classes, input_ch, batch_norm=True, batch_norm_alpha=0.1):
         super(ShallowConvNet_dk, self).__init__()
         self.batch_norm = batch_norm

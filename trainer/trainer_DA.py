@@ -37,7 +37,7 @@ class TrainMaker:
         self.device = gpu_checking(args)
 
         if DA == False:
-            self.writer = SummaryWriter(log_dir=f'./runs/lr{self.args.lr}_wd{self.args.wd}')
+            self.writer = SummaryWriter(log_dir=f'./runs/{self.args.test_subj}/lr{self.args.lr}_wd{self.args.wd}')
             self.optimizer = self.optimizer(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
             self.epoch = self.args.epoch
             self.lr = self.args.lr
@@ -54,7 +54,11 @@ class TrainMaker:
         self.criterion = self.__set_criterion(self.args.criterion)   
 
     def training(self, shuffle=True, interval=1000):
-        prev_v = -10
+        if self.args.standard == 'loss':
+            prev_v = 1000
+        else :
+            prev_v = -10
+
         sampler = torch.utils.data.WeightedRandomSampler(self.data.in_weights, replacement=True, num_samples=self.data.x.shape[0])
         data_loader = DataLoader(self.data, batch_size=self.args.batch_size, sampler=sampler)
         
@@ -76,8 +80,8 @@ class TrainMaker:
 
                 self.optimizer.zero_grad() # optimizer 항상 초기화 
                 x = x.reshape(b, 1, self.channel_num, -1) # [1, 1, 25, 750]
-                pred = self.model(x.to(device=self.device).float())
-                
+                self.model.eval() ##################
+                pred = self.model(x.to(device=self.device).float()); self.model.train()
                 pred_prob = F.softmax(pred, dim=-1) 
                 # pred, (hidden_state, cell_state) = network(x.view(b, 1, -1).float().to(device=device), (hidden_state[:,:b].detach().contiguous(), cell_state[:,:b].detach().contiguous())) # view함수 -> 밑에 적음
                 loss = self.criterion(pred_prob, y.flatten().long().to(device=self.device)) 
@@ -105,16 +109,6 @@ class TrainMaker:
                 
                 # Record history per mini-batch
                 self.record_history(log, self.history_mini_batch, phase='train')
-
-            # pred_list_acc = np.concatenate((pred_list_acc, pred_list))
-            # print(pred_list_acc)
-            
-            # print("=====", true_label)
-            # print("true_label:", true_label)
-            # print(true_label)
-            # print("\n\n\n", pred_list)
-            # print(true_label_acc)
-            # print(pred_label_acc)
            
             f1 = f1_score(true_label_acc, pred_label_acc, average='macro') 
             acc = accuracy_score(true_label_acc, pred_label_acc)
@@ -126,16 +120,31 @@ class TrainMaker:
 
             if self.data_v != None:
                 f1_v, acc_v, cm_v, loss_v = self.evaluation(self.data_v)
-                if f1_v > prev_v : 
-                    prev_v = f1_v 
-                    create_folder(f'./param/lr{self.lr}_wd{self.wd}')
-                    torch.save(self.model.state_dict(), f'./param/lr{self.lr}_wd{self.wd}/eegnet_f1_{f1_v:.2f}')
-                    self.save_checkpoint(epoch=len(self.history['train_loss']))
+                if self.args.standard == 'loss':
+                    if loss_v < prev_v :
+                        prev_v = loss_v
+                        create_folder(f'./param/lr{self.lr}_wd{self.wd}')
+                        torch.save(self.model.state_dict(), f'./param/lr{self.lr}_wd{self.wd}/{self.args.model}_loss_{loss_v:.2f}')
+                        self.save_checkpoint(epoch=len(self.history['train_loss']))
+
+                elif self.args.standard == 'f1':
+                    if f1_v > prev_v : 
+                        prev_v = f1_v 
+                        create_folder(f'./param/lr{self.lr}_wd{self.wd}')
+                        torch.save(self.model.state_dict(), f'./param/lr{self.lr}_wd{self.wd}/{self.args.model}_f1_{f1_v:.2f}')
+                        self.save_checkpoint(epoch=len(self.history['train_loss']))
+
+                elif self.args.standard == 'acc':
+                    if acc_v > prev_v : 
+                        prev_v = f1_v 
+                        create_folder(f'./param/lr{self.lr}_wd{self.wd}')
+                        torch.save(self.model.state_dict(), f'./param/lr{self.lr}_wd{self.wd}/{self.args.model}_f1_{acc_v:.2f}')
+                        self.save_checkpoint(epoch=len(self.history['train_loss']))
             else:
                 self.save_checkpoint(epoch=len(self.history['train_loss']))
             
             self.write_history(self.history_mini_batch)
-            # writer.add_scalar('Learning Rate', lr.get_last_lr()[-1], e)
+            # self.writer.add_scalar('Learning Rate', self.lr.get_last_lr()[-1], e)
             # self.writer.add_scalar('Train/Loss', epoch_loss, e)
             # self.writer.add_scalar('Train/F1', f1, e)
             # self.writer.add_scalar('Train/Acc', acc, e)
@@ -145,14 +154,15 @@ class TrainMaker:
             # self.writer.add_scalar('Valid/Acc', acc_v, e)
             # self.writer.flush()
 
-            # wandb.log({"loss": epoch_loss,
-            #             "acc": acc,
-            #             "f1":f1,
-            #             "vloss": loss_v,
-            #             "vacc": acc_v,
-            #             "vf1":f1_v,
-            #             # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
-            # })
+            if self.args.mode == "train":
+                wandb.log({"loss": epoch_loss,
+                            "acc": acc,
+                            "f1":f1,
+                            "vloss": loss_v,
+                            "vacc": acc_v,
+                            "vf1":f1_v,
+                            # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
+                })
             if self.args.scheduler != None:
                 self.scheduler.step()
 
@@ -423,6 +433,11 @@ class TrainMaker:
             scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,
                                                              T_max=args.T_max if args.T_max else args.epochs,
                                                              eta_min=args.eta_min if args.eta_min else 0)
+        elif args.scheduler == 'one_cycle':
+            scheduler = optim.lr_scheduler.OneCycleLR(optimizer,
+                                                    max_lr=args.max_lr, 
+                                                    steps_per_epoch=args.steps_per_epoch,
+                                                    epochs=args.cycle_epochs)
         else:
             raise ValueError(f"Not supported {args.scheduler}.")
         return scheduler
