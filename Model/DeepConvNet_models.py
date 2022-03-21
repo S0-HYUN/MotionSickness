@@ -113,6 +113,120 @@ class DeepConvNet(nn.Module):
         norm = torch.pow(torch.sum(torch.pow(feature, 2), 1) + epsilon, 0.5).unsqueeze(1).expand_as(feature)
         return torch.div(feature, norm)
 
+'''
+'''
+class DeepConvNet_dk(nn.Module):
+    def __init__(self, n_classes, input_ch, input_time, batch_norm=True, batch_norm_alpha=0.1):
+        super(DeepConvNet_dk, self).__init__()
+        self.batch_norm = batch_norm
+        self.batch_norm_alpha = batch_norm_alpha
+        self.n_classes = n_classes
+        n_ch1 = 25
+        n_ch2 = 50
+        n_ch3 = 100
+        self.n_ch4 = 200
+
+        if self.batch_norm:
+            self.convnet = nn.Sequential(
+                nn.Conv2d(1, n_ch1, kernel_size=(1, 10), stride=1), # 10 -> 5 # 28 * 741
+                nn.Conv2d(n_ch1, n_ch1, kernel_size=(input_ch, 1), stride=1, bias=not self.batch_norm),
+                nn.BatchNorm2d(n_ch1,
+                               momentum=self.batch_norm_alpha,
+                               affine=True,
+                               eps=1e-5),
+                nn.ELU(),
+                nn.MaxPool2d(kernel_size=(1, 3), stride=(1, 3)), #28 238
+
+                nn.Dropout(p=0.5),
+                nn.Conv2d(n_ch1, n_ch2, kernel_size=(1, 10), stride=1, bias=not self.batch_norm),
+                nn.BatchNorm2d(n_ch2,
+                               momentum=self.batch_norm_alpha,
+                               affine=True,
+                               eps=1e-5),
+                nn.ELU(),
+                nn.MaxPool2d(kernel_size=(1, 3), stride=(1, 3)), #28 76
+
+                nn.Dropout(p=0.5),
+                nn.Conv2d(n_ch2, n_ch3, kernel_size=(1, 10), stride=1, bias=not self.batch_norm),
+                nn.BatchNorm2d(n_ch3,
+                               momentum=self.batch_norm_alpha,
+                               affine=True,
+                               eps=1e-5),
+                nn.ELU(),
+                nn.MaxPool2d(kernel_size=(1, 3), stride=(1, 3)),
+
+                nn.Dropout(p=0.5),
+                nn.Conv2d(n_ch3, self.n_ch4, kernel_size=(1, 10), stride=1, bias=not self.batch_norm),
+                nn.BatchNorm2d(self.n_ch4,
+                               momentum=self.batch_norm_alpha,
+                               affine=True,
+                               eps=1e-5),
+                nn.ELU(),
+                nn.MaxPool2d(kernel_size=(1, 3), stride=(1, 3)),
+                )
+        else:
+            self.convnet = nn.Sequential(
+                nn.Conv2d(1, n_ch1, kernel_size=(1, 10), stride=1,bias=False),
+                nn.BatchNorm2d(n_ch1,
+                               momentum=self.batch_norm_alpha,
+                               affine=True,
+                               eps=1e-5),
+                nn.Conv2d(n_ch1, n_ch1, kernel_size=(input_ch, 1), stride=1),
+                # nn.InstanceNorm2d(n_ch1),
+                nn.ELU(),
+                nn.MaxPool2d(kernel_size=(1, 2), stride=(1, 2)),
+                nn.Dropout(p=0.5),
+                nn.Conv2d(n_ch1, n_ch2, kernel_size=(1, 10), stride=1),
+                # nn.InstanceNorm2d(n_ch2),
+                nn.ELU(),
+                nn.MaxPool2d(kernel_size=(1, 2), stride=(1, 2)),
+                # nn.Dropout(p=0.5),
+                nn.Conv2d(n_ch2, n_ch3, kernel_size=(1, 10), stride=1),
+                # nn.InstanceNorm2d(n_ch3),
+                nn.ELU(),
+                nn.MaxPool2d(kernel_size=(1, 2), stride=(1, 2)),
+                nn.Dropout(p=0.5),
+                nn.Conv2d(n_ch3, self.n_ch4, kernel_size=(1, 10), stride=1),
+                # nn.InstanceNorm2d(self.n_ch4),
+                nn.ELU(),
+                nn.MaxPool2d(kernel_size=(1, 2), stride=(1, 2)),
+            )
+        self.convnet.eval()
+        out = self.convnet(torch.zeros(1, 1, input_ch, input_time))
+        # out = torch.zeros(1, 1, input_ch, input_time)
+        #
+        # for i, module in enumerate(self.convnet):
+        #     print(module)
+        #     out = module(out)
+        #     print(out.size())
+        #
+
+        n_out_time = out.cpu().data.numpy().shape[3]
+        self.final_conv_length = n_out_time
+
+        self.n_outputs = out.size()[1]*out.size()[2]*out.size()[3]
+
+        ##############기억
+        self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes), nn.Dropout(p=0.2))  ####################### classifier 
+        # self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes))
+        # DG usually doesn't have classifier
+        # so, add at the end
+
+    def forward(self, x):
+        output = self.convnet(x)
+        output = output.view(output.size()[0], -1)
+        # output = self.l2normalize(output)
+        output=self.clf(output) 
+
+        return output
+
+    def get_embedding(self, x):
+        return self.forward(x)
+
+    def l2normalize(self, feature):
+        epsilon = 1e-6
+        norm = torch.pow(torch.sum(torch.pow(feature, 2), 1) + epsilon, 0.5).unsqueeze(1).expand_as(feature)
+        return torch.div(feature, norm)
 
 class ShallowConvNet(nn.Module):
     def __init__(self, n_classes, input_ch, batch_norm=True, batch_norm_alpha=0.1):
@@ -158,12 +272,13 @@ class ShallowConvNet_dk(nn.Module):
                                momentum=self.batch_norm_alpha,
                                affine=True,
                                eps=1e-5))
-        self.fc = nn.Linear(1760, n_classes)
+        # self.fc = nn.Linear(1760, n_classes)
+        self.fc = nn.Linear(800, n_classes)
                                             
     def forward(self, x):
         x = self.layer1(x)
         x = torch.square(x)
-        x = torch.nn.functional.avg_pool2d(x, kernel_size = (1,75), stride =  (1,15))
+        x = torch.nn.functional.avg_pool2d(x, kernel_size = (1,75), stride = (1,15))
         x = torch.log(x)
         x = x.flatten(1)
         x = torch.nn.functional.dropout(x) # shape [1, 1760]
@@ -281,11 +396,14 @@ if __name__ == '__main__':
     # model = DeepConvNet(2,32,200)
     # model = ShallowConvNet_dk(1,30,725)
     # model = ShallowConvNet_dk(1,22,1125)
-    model= ShallowConvNet_dk(3,28,750)
+    # model= ShallowConvNet_dk(3,28,750)
+    model = DeepConvNet_dk(3, 28, 750)
     # model = ShallowConvNet_dk(4,22,1000)
-    
+    model = DeepConvNet(3, 14, 128*3)
+
     # model = FcClfNet(embedding_net)
     from pytorch_model_summary import summary
 
-    print(summary(model, torch.zeros((1, 1, 28, 750)), show_input=False))
+    print(summary(model, torch.zeros((1, 1, 14, 128*3)), show_input=False))
+    # print(summary(model, torch.zeros((1, 1, 28, 750)), show_input=True))
     # print(summary(model, torch.zeros((1, 1, 22, 1000)), show_input=False))

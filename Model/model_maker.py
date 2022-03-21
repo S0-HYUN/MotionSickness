@@ -3,6 +3,7 @@ from Model.DCAN_models import dcca_eeg
 from Model.DeepConvNet_models import *
 from Model.EEGNet_models import *
 from Model.DCAN_models import *
+from Model.soso_models import soso
 from utils import *
 import pickle
 import importlib
@@ -27,7 +28,10 @@ class ModelMaker:
         if self.first == True and args.mode == "train":
             self.args_class.set_save_path() # setting save_path
             if args.model == 'DeepConvNet':
-                model = DeepConvNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device) 
+                if args.channel_num == 14:
+                    model = DeepConvNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device)
+                else:
+                    model = DeepConvNet_dk(args.class_num, args.channel_num, args.one_bundle).to(device = self.device) 
             elif args.model == 'ShallowConvNet':
                 # model = ShallowConvNet_dk(args.class_num, args.channel_num, 750).to(device = self.device) #1000
                 model = ShallowConvNet_dk(args.class_num, args.channel_num).to(device = self.device)
@@ -35,6 +39,8 @@ class ModelMaker:
                 model = EEGNet(args.class_num, args.channel_num, args.one_bundle).to(device = self.device)
             elif args.model == 'CRL':
                 model = CRLNet(args.class_num, args.channel_num).to(device = self.device)
+            elif args.model == 'soso':
+                model = soso(args)
             write_pickle(os.path.join(args.save_path, f"model_{args.standard}.pk"), model)
 
         elif args.DA == False and args.mode == "test":

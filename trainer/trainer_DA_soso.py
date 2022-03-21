@@ -16,6 +16,7 @@ from utils import *
 from loss.ND_Crossentropy import CrossentropyND, TopKLoss
 from loss.focalloss import *
 from loss.label_smoothing import LabelSmoothingCrossEntropy
+from loss.distance_loss import MDRLoss
 from utils import gpu_checking
 from collections import defaultdict
 import wandb
@@ -51,7 +52,7 @@ class TrainMaker:
             self.wd = 0 ##이게 맞나?
 
         self.scheduler = self.__set_scheduler(args, self.optimizer)
-        self.criterion = self.__set_criterion(self.args.criterion)   
+        self.criterion = self.__set_criterion(self.args.criterion, self.args)   
 
     def training(self, shuffle=True, interval=1000):
         if self.args.standard == 'loss': prev_v = 1000
@@ -70,7 +71,7 @@ class TrainMaker:
             pred_list = None
             true_label = None
             # history_mini_batch = defaultdict(list)
-            f1, acc, cm, loss = self.evaluation(self.data, state="train") # train데이터 eval 끄고 evaluation
+            # f1, acc, cm, loss = self.evaluation(self.data, state="train") # train데이터 eval 끄고 evaluation
             for idx, data in enumerate(data_loader): 
                 x, y = data
                
@@ -81,9 +82,13 @@ class TrainMaker:
                 x = x.reshape(b, 1, self.channel_num, -1) # [1, 1, 25, 750]
                
                 pred = self.model(x.to(device=self.device).float())
-                pred_prob = F.softmax(pred, dim=-1) 
+                pred_prob = F.softmax(pred, dim=-1)
                 # pred, (hidden_state, cell_state) = network(x.view(b, 1, -1).float().to(device=device), (hidden_state[:,:b].detach().contiguous(), cell_state[:,:b].detach().contiguous())) # view함수 -> 밑에 적음
-                loss = self.criterion(pred_prob, y.flatten().long().to(device=self.device)) 
+
+                # loss = self.criterion(pred_prob, y.flatten().long().to(device=self.device))
+                # loss = torch.norm(pred-y)
+                # loss = self.criterion(pred_prob, y.flatten().float().to(device=self.device)) 
+                loss = self.criterion(pred)
                 if (idx+1) % interval == 0: print('[Epoch{}, Step({}/{})] Loss:{:.4f}'.format(e+1, idx+1, len(data_loader.dataset) // self.args.batch_size, epoch_loss / (idx + 1)))
 
                 loss.backward()
@@ -107,7 +112,7 @@ class TrainMaker:
                 
                 # Record history per mini-batch
                 self.record_history(log, self.history_mini_batch, phase='train')
-           
+
             f1 = f1_score(true_label_acc, pred_label_acc, average='macro') 
             acc = accuracy_score(true_label_acc, pred_label_acc)
             cm = confusion_matrix(true_label_acc, pred_label_acc)
@@ -184,7 +189,8 @@ class TrainMaker:
                 x = x.reshape(b, 1, self.channel_num, -1)
                 pred = self.model(x.to(device=self.device).float())
                 
-                loss = self.criterion(pred, y.flatten().long().to(device=self.device)) # pred.shape
+                # loss = self.criterion(pred, y.flatten().long().to(device=self.device)) # pred.shape
+                loss = self.criterion(pred)
                 valid_loss += loss
                 # if (idx+1) % interval == 0: print('[Epoch, Step({}/{})] Valid Loss:{:.4f}'.format(idx+1, len(data)//self.args.batch_size, loss / (idx +1)))
                 pred_prob = F.softmax(pred, dim=-1)
@@ -230,135 +236,6 @@ class TrainMaker:
 
         return f1, acc, cm, valid_loss
 
-    def predict_proba(self, data, interval=1000, n_instances=1, mcdo=False, random=False, *query_args, **query_kwargs):
-        data_loader = DataLoader(data, batch_size=self.args.batch_size)
-        
-        if not mcdo:
-            with torch.no_grad(): # gradient 안함
-                self.model.eval() # dropout은 training일 때만, evaluation으로 하면 dropout 해제 ############################
-
-                pred_list = []
-                uncertainty_list = []
-
-                for idx, data in enumerate(data_loader):
-                    # x = data
-                    # true_label.append(y)
-                    x = data
-                    b = x.shape[0]
-
-                    x = x.reshape(b, 1, self.channel_num, -1)
-                    pred = self.model(x.to(device=self.device).float())
-
-                    # pred = self.model(x.transpose(1,2).reshape(b,1,self.channel_num,-1).to(device=self.device).float())
-                    pred_prob = F.softmax(pred, dim=-1)
-                    # uncertainty = torch.max(pred_prob, dim=-1).values.cpu()
-                    uncertainty = torch.ones(pred_prob.shape[0]).cpu() - torch.max(pred_prob, dim=-1).values.cpu()
-                    pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy()
-                    
-                    pred_list.append(pred_label)
-                    uncertainty_list.append(uncertainty)
-                                
-                pred_list = np.concatenate(pred_list)
-                uncertainty_list = np.concatenate(uncertainty_list)
-                
-                if random is True:
-                    print("[Random strategy]")
-                    max_idx = np.random.choice(data.shape[0], 1, False)
-                    
-                else:
-                    max_idx = multi_argmax(uncertainty_list, n_instances=n_instances)
-                # print(pred_list)
-                pseudo_labeling = pred_list[max_idx]
-                
-                # return multi_argmax(uncertainty_list, n_instances=query_kwargs['n_instances'])
-
-        else:
-            with torch.no_grad(): 
-                self.model.eval()
-                self.enable_dropout(self.model.clf)
-
-                uncertainty_list = []
-                mean_lists =  []
-
-                for idx, data in enumerate(data_loader):
-                    pred_list = []
-                    for _ in range(10) :
-                        # x = data
-                        # true_label.append(y)
-                        x = data
-                        b = x.shape[0]
-
-                        x = x.reshape(b, 1, self.channel_num, -1)
-                        pred = self.model(x.to(device=self.device).float())
-                        
-                        # pred = self.model(x.transpose(1,2).reshape(b,1,self.channel_num,-1).to(device=self.device).float())
-                        pred_prob = F.softmax(pred, dim=-1)
-                    # uncertainty = torch.max(pred_prob, dim=-1).values.cpu()
-                    
-                        pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy()
-                        pred_list.append(pred_label)
-
-                    std_list = np.std(pred_list, axis=0)
-                    mean_list = np.mean(pred_list, axis=0)
-                    # pred_list = np.concatenate(pred_list)
-                    uncertainty_list.append(std_list)
-                    mean_lists.append(mean_list)
-                
-                uncertainty_list = np.concatenate(uncertainty_list)
-                pred_list = np.concatenate(mean_lists)
-                pred_list = pred_list.round(0)
-                max_idx = multi_argmax(uncertainty_list, n_instances=n_instances)
-                # print(pred_list)
-
-                pseudo_labeling = pred_list[max_idx]
-
-        return max_idx, pseudo_labeling
-
-    def predict_score(self, data, interval=1000, *query_args, **query_kwargs):
-        data_loader = DataLoader(data, batch_size=self.args.batch_size)
-   
-        with torch.no_grad(): # gradient 안함
-            self.model.eval() # dropout은 training일 때만, evaluation으로 하면 dropout 해제 ############################
-            pred_list = []
-            true_label = []
-
-            for idx, data in enumerate(data_loader):
-                x, y = data
-                true_label.append(y)
-                b = x.shape[0]
-                
-                pred = self.model(x.transpose(1,2).reshape(b,1,self.channel_num,-1).to(device=self.device).float())
-                pred_prob = F.softmax(pred, dim=-1)
-                
-                pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy()                
-                pred_list.append(pred_label)
-
-            pred_list = np.concatenate(pred_list)
-            true_label = np.concatenate(true_label)
-        
-        f1 = f1_score(true_label, pred_list, average="macro")
-        return f1
-
-    def pseudo_label(self, data, interval=1000, *query_args, **query_kwargs):
-        print("[trainer]pseudo_label에서의 print", data.x.shape)
-        data_loader = DataLoader(data, batch_size=self.args.batch_size)
-        pred_list = []
-        with torch.no_grad(): # gradient 안함
-            self.model.eval() # dropout은 training일 때만, evaluation으로 하면 dropout 해제 ############################
-      
-            for idx, data in enumerate(data_loader):
-                x, y = data
-                b = x.shape[0]
-                x = x.reshape(b, 1, self.channel_num, -1)
-                pred = self.model(x.to(device=self.device).float())
-                # pred = self.model(x.transpose(1,2).reshape(b,1,self.channel_num,-1).to(device=self.device).float())
-                pred_prob = F.softmax(pred, dim=-1)
-                
-                pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy() 
-                pred_list.append(pred_label)
-        pred_list = np.concatenate(pred_list)
-        return pred_list
-
     def record_history(self, log, history, phase):
         for metric in log:
             history[f'{phase}_{metric}'].append(log[metric])
@@ -388,7 +265,7 @@ class TrainMaker:
         # if epoch >= 6:
         #     os.remove(os.path.join(self.args.save_path, f"checkpoints/{epoch - 5}.tar"))
     
-    def __set_criterion(self, criterion):
+    def __set_criterion(self, criterion, args):
         if criterion == "MSE":
             criterion = nn.MSELoss()
         elif criterion == "CEE":
@@ -403,7 +280,10 @@ class TrainMaker:
             criterion = LabelSmoothingCrossEntropy()
         elif criterion == "cosine":
             criterion = nn.CosineEmbeddingLoss()
-            
+        elif criterion == "MDR":
+            criterion = MDRLoss(args)
+        else:
+            raise
         return criterion
     
     def __set_scheduler(self, args, optimizer):

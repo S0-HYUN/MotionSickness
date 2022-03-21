@@ -35,7 +35,7 @@ class Args:
         
         ### bci competition
         # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic_modi/')
-        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_rest/') #Files_scale_01_2345_6789+rest
+        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789/') #Files_scale_01_2345_6789+rest
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
         parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
@@ -72,10 +72,11 @@ class Args:
             parser.add_argument('--steps_per_epoch', type=int, default=10) # 증가하는 cycle의 반
             parser.add_argument('--cycle_epochs', type=int, default=10)
 
-        parser.add_argument("--criterion", type=str, default="CEE")
+        parser.add_argument("--criterion", type=str, default="MDR")
         parser.add_argument("--optimizer", type=str, default="AdamW")   # AdamW, SGD
 
         parser.add_argument("--metrics", type=list, default=["loss", "acc"])
+        parser.add_argument("--distance", type=str, default="euclidean")
 
         parser.add_argument("--lr", type=float, default=0.001) # 1e-3 #bcic:0.000625
         parser.add_argument("--wd", type=float, default=0.0001) # 1e-3
@@ -84,7 +85,7 @@ class Args:
         parser.add_argument("--epoch", type=int, default=100)          # 3000
         parser.add_argument("--one_bundle", type=int, default=750)     # int(1500/2) / 1125
         parser.add_argument("--channel_num", type=int, default=28)      # 28 / 22
-        parser.add_argument("--class_num", type=int, default=2)
+        parser.add_argument("--class_num", type=int, default=3)
         parser.add_argument("--expt", type=int, default=1, help="1:오전,2:오후")
         if parser.parse_known_args()[0].expt == 1:
             parser.add_argument("--remove_subj", type=list, default=[1,2,4,14,16,17,19])

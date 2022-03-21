@@ -26,7 +26,7 @@ class Args:
             parser.add_argument('--da_lr', type=float, default=1e-4, required=True)
 
         #---# Model #---#
-        parser.add_argument("--model", type=str, default="DeepConvNet", choices=['DeepConvNet', 'ShallowConvNet', 'EEGNet', 'CRL']) #DeepConvNet, ShallowConvNet, EEGNet, CRL
+        parser.add_argument("--model", type=str, default="EEGNet", choices=['DeepConvNet', 'ShallowConvNet', 'EEGNet', 'CRL']) #DeepConvNet, ShallowConvNet, EEGNet, CRL
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
         ### Motion sickness
@@ -35,13 +35,13 @@ class Args:
         
         ### bci competition
         # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic_modi/')
-        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_rest/') #Files_scale_01_2345_6789+rest
-        parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
-        parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
-        parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
-        parser.add_argument("--save_folder", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
+        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_CS/')
+        parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param_CS")
+        parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs_CS")
+        parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train_CS/")
+        parser.add_argument("--save_folder", type=str, default="/opt/workspace/xohyun/MS_codes/train_CS/")
         parser.add_argument("--save_pastfolder", type=str, default="/opt/workspace/xohyun/MS_codes/train_PAST")
-        parser.add_argument("--load_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
+        parser.add_argument("--load_path", type=str, default="/opt/workspace/xohyun/MS_codes/train_CS/")
         parser.add_argument("--ft_folder", type=str, default="/opt/workspace/xohyun/MS_codes/train_da/") # for fine-tuning
 
         #---# Train #---#
@@ -73,24 +73,20 @@ class Args:
             parser.add_argument('--cycle_epochs', type=int, default=10)
 
         parser.add_argument("--criterion", type=str, default="CEE")
-        parser.add_argument("--optimizer", type=str, default="AdamW")   # AdamW, SGD
+        parser.add_argument("--optimizer", type=str, default="SGD")   # AdamW, SGD
 
         parser.add_argument("--metrics", type=list, default=["loss", "acc"])
 
-        parser.add_argument("--lr", type=float, default=0.001) # 1e-3 #bcic:0.000625
-        parser.add_argument("--wd", type=float, default=0.0001) # 1e-3
+        parser.add_argument("--lr", type=float, default=1e-3) # 1e-3 #bcic:0.000625
+        parser.add_argument("--wd", type=float, default=1e-4) # 1e-3
 
         parser.add_argument("--batch_size", type=int, default=256)      # 512
         parser.add_argument("--epoch", type=int, default=100)          # 3000
-        parser.add_argument("--one_bundle", type=int, default=750)     # int(1500/2) / 1125
-        parser.add_argument("--channel_num", type=int, default=28)      # 28 / 22
-        parser.add_argument("--class_num", type=int, default=2)
-        parser.add_argument("--expt", type=int, default=1, help="1:오전,2:오후")
-        if parser.parse_known_args()[0].expt == 1:
-            parser.add_argument("--remove_subj", type=list, default=[1,2,4,14,16,17,19])
-        else:
-            parser.add_argument("--remove_subj", type=list, default=[4,8,11,17]) 
-        parser.add_argument("--test_subj", type=int, default=12)
+        parser.add_argument("--one_bundle", type=int, default=int(128*3))     # int(1500/2) / 1125
+        parser.add_argument("--channel_num", type=int, default=14)      # 28 / 22
+        parser.add_argument("--class_num", type=int, default=3)
+        parser.add_argument("--video_num", type=int, default=20)
+        parser.add_argument("--test_subj", type=int, default=1)
         parser.add_argument("--test_size", type=float, default=0.1); # 0.05
         # parser.add_argument("-")
     

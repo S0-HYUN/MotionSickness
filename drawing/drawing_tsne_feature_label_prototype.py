@@ -16,16 +16,27 @@ def main():
     # data = np.load(f"/opt/workspace/xohyun/MS_codes/features_EEGNet_10/original_subj01_epoch10.npz")
     data = np.load(f"/opt/workspace/xohyun/MS_codes/features_rest/original_subj01.npz")
     x_raw = data['arr_0']; y_raw = data['arr_1']
-    # y_raw = np.repeat(1, y_raw.shape[0])
-    
-    '''for i in range(2,7):
+    y_raw = np.repeat(1, y_raw.shape[0])
+    x_proto = [x_raw.mean(axis=0).tolist()]
+    y_proto = np.repeat(1,1)
+    x_proto_dict = {"1":x_proto}
+
+    for i in range(2,24):
         # data = np.load(f"/opt/workspace/xohyun/MS_codes/features_EEGNet_10/original_subj{str(i).zfill(2)}_epoch10.npz")
         data = np.load(f"/opt/workspace/xohyun/MS_codes/features_rest/original_subj{str(i).zfill(2)}.npz")
         # x_raw = torch.cat((x_raw, data['arr_0']))
         x_raw = np.concatenate((x_raw, data['arr_0']))
-        y_raw = np.concatenate((y_raw, data['arr_1']))
-        # y_raw = np.concatenate((y_raw, np.repeat(i, data['arr_0'].shape[0])))'''
+        # y_raw = np.concatenate((y_raw, data['arr_1']))
+        y_raw = np.concatenate((y_raw, np.repeat(i, data['arr_0'].shape[0])))
+        x_proto = np.concatenate((x_proto, [data['arr_0'].mean(axis=0)]))
+        y_proto = np.concatenate((y_proto, np.repeat(i,1)))
+        x_proto_dict[f'{str(i)}'] = [data['arr_0'].mean(axis=0).tolist()]
 
+    #---# Save the prototype in json format #---#
+    import json
+    with open("./rest_prototype.json", "w") as f:
+        json.dump(x_proto_dict, f)
+    
     #---# choose label #---#
     # x_df = pd.DataFrame(data_x)
     # y_df = pd.DataFrame(data_y, columns=['label'])
@@ -38,7 +49,8 @@ def main():
     # data_x = x_df.to_numpy()
     # data_y = y_df.to_numpy()
 
-    visualizer(x_raw, y_raw)
+    # visualizer(x_raw, y_raw)
+    visualizer(x_proto, y_proto)
 
 
 def visualizer(data, label, batch=None, dataset=None, tde=-1, title=None):
@@ -52,7 +64,7 @@ def visualizer(data, label, batch=None, dataset=None, tde=-1, title=None):
     plt.figure(figsize=(12, 8))
     print('T-SNE finished!')
     # label = list(label.squeeze(1))
-    scatter = plt.scatter(x_embedded[:, 0], x_embedded[:, 1], s=10, c=label, cmap='rainbow')
+    scatter = plt.scatter(x_embedded[:, 0], x_embedded[:, 1], s=25, c=label, cmap='rainbow')
     plt.legend(handles=scatter.legend_elements()[0], labels=[str(i) for i in range(len(set(label)))])
     # plt.legend(handles=scatter.legend_elements()[0], labels=[str(i) for i in range(5,7)])
     # plt.show()
