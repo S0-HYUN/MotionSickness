@@ -2,7 +2,6 @@ from numpy.core.fromnumeric import reshape, transpose
 import torch
 import torch.nn as nn
 import numpy as np
-import torch.nn.functional as F
 from utils import gpu_checking
 
 class DeepConvNet_dk(nn.Module):
@@ -127,46 +126,30 @@ class soso(nn.Module):
 
         import json
         with open('rest_prototype.json') as f:
-            prototypes = json.load(f) # 각 subject의 prototypes load
-
+            prototypes = json.load(f)
+      
         self.prototype = list(prototypes.values())
-        mean_proto = self.prototype[0] 
+        mean_proto = self.prototype[0]
         for i in self.prototype: mean_proto = np.concatenate((mean_proto, i), axis=0)
+
         self.mean_proto = mean_proto.mean(axis=0) # 완전한 mean
 
-        #model
-        # self.conv = nn.Sequential(nn.Linear(1, 1), nn.Dropout(p=0.2))
-        
-    def forward(self, x, y):
+        # flag = list(self.model._modules)[-1]
+        # final_layer = self.model._modules.get(flag)
+        # activated_features = FeatureExtractor(final_layer)
+    def forward(self, x):
         embeddings = self.model(x.to(device=self.device).float()) # (256, 200, 1, 4) / (batch size, class_num)
-        # print(y)
-        index_0 = (y==0); index_1 = (y==1); index_2 = (y==2)
+
+        # print(embeddings); print(embeddings.shape)
         
-        pdist = nn.PairwiseDistance(p=2)
-        d_c0 = pdist(embeddings[index_0], torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0))
-        d_c1 = pdist(embeddings[index_1], torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0))
-        d_c2 = pdist(embeddings[index_2], torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0))
-        print("===",torch.mean(d_c0)); print("===",torch.mean(d_c1)); print("===",torch.mean(d_c2))
-        dis = torch.zeros(embeddings.shape[0], device=self.device)
-        dis[index_0] = d_c0; dis[index_1] = d_c1; dis[index_2] = d_c2; dis = dis.unsqueeze(dim=0)
-        
-        dis_normal = F.normalize(dis) # shape : (1, batch_size)
-        
-        # output = self.conv(dis_normal)
-        # print(output)
-        return dis_normal
-        raise
         # if self.dist == "cosine":
         #     dists = 1 - nn.CosineSimilarity(dim=-1)()
         # else:
         #     dists = torch.norm()
-        
-        ###
-        # pdist = nn.PairwiseDistance(p=2, keepdim=True)
-        # input1 = embeddings.mean(axis=0).to(dtype=torch.float64).float().unsqueeze(dim=0)
-        # input2 = torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0)
+        pdist = nn.PairwiseDistance(p=2, keepdim=True)
+        input1 = embeddings.mean(axis=0).to(dtype=torch.float64).float().unsqueeze(dim=0)
+        input2 = torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0)
 
-        # output = pdist(input1, input2)
-
-
+        output = pdist(input1, input2)
+        print("===거리", output)
         return output

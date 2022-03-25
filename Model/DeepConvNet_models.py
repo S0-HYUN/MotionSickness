@@ -128,7 +128,7 @@ class DeepConvNet_dk(nn.Module):
 
         if self.batch_norm:
             self.convnet = nn.Sequential(
-                nn.Conv2d(1, n_ch1, kernel_size=(1, 10), stride=1), # 10 -> 5 # 28 * 741
+                nn.Conv2d(1, n_ch1, kernel_size=(1, 10), stride=1), # 10 -> 5 # 28 * 741 # (10, 247)
                 nn.Conv2d(n_ch1, n_ch1, kernel_size=(input_ch, 1), stride=1, bias=not self.batch_norm),
                 nn.BatchNorm2d(n_ch1,
                                momentum=self.batch_norm_alpha,
@@ -397,13 +397,14 @@ if __name__ == '__main__':
     # model = ShallowConvNet_dk(1,30,725)
     # model = ShallowConvNet_dk(1,22,1125)
     # model= ShallowConvNet_dk(3,28,750)
-    model = DeepConvNet_dk(3, 28, 750)
+    model = DeepConvNet_dk(3, 28, 1125)
     # model = ShallowConvNet_dk(4,22,1000)
-    model = DeepConvNet(3, 14, 128*3)
+    # model = DeepConvNet(3, 14, 128*3)
 
     # model = FcClfNet(embedding_net)
     from pytorch_model_summary import summary
 
-    print(summary(model, torch.zeros((1, 1, 14, 128*3)), show_input=False))
+    # print(summary(model, torch.zeros((1, 1, 14, 128*3)), show_input=False))
     # print(summary(model, torch.zeros((1, 1, 28, 750)), show_input=True))
+    print(summary(model, torch.zeros((1, 1, 28, 1125)), show_input=True))
     # print(summary(model, torch.zeros((1, 1, 22, 1000)), show_input=False))

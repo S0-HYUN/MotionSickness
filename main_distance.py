@@ -41,8 +41,8 @@ def main():
 
     if args.mode == "train":
         # wandb.init(project=f"{args.model}_{args.standard}_{args.class_num}_case6", entity="sohyun", name=f"{args.test_subj}_{args.model}_{args.standard}_{args.class_num}")
-        wandb.init(project="test", entity="sohyun", name=f"{args.test_subj}_{args.model}_{args.lr}_{args.wd}_{args.scheduler}_{args.optimizer}_{args.class_num}clsss")
-        wandb.watch(model, log='all')
+        # wandb.init(project="test", entity="sohyun", name=f"{args.test_subj}_{args.model}_{args.lr}_{args.wd}_{args.scheduler}_{args.optimizer}_{args.class_num}clsss")
+        # wandb.watch(model, log='all')
         f1_v, acc_v, cm_v, loss_v = trainer.training() # fitting
 
     elif args.DA == False and args.mode == "test":

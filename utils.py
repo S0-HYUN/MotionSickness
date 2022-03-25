@@ -27,9 +27,10 @@ def gpu_checking(args) :
     # os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
     return device
 
-def data_preprocesesing(train, remove, test_list) :
+def data_preprocesesing(train, test_list, remove=None) :
     train_list = [x for x in train if x not in (test_list)]
-    train_list = [x for x in train_list if x not in (remove)]
+    if remove != None:
+        train_list = [x for x in train_list if x not in (remove)]
     return train_list
 
 def fix_random_seed(args):
@@ -53,7 +54,7 @@ def get_time() :
     current = str(year) + \
         str(current_time.month).zfill(2) + \
         str(current_time.day).zfill(2) + \
-        str(current_time.hour).zfill(2) + \
+        str(current_time.hour + 9).zfill(2) + \
         str(current_time.minute).zfill(2)
     return current
 
