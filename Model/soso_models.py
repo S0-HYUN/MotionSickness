@@ -3,22 +3,32 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
+from zmq import device
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
 from utils import gpu_checking
 
-class DeepConvNet_dk(nn.Module):
-    def __init__(self, n_classes, input_ch, input_time, batch_norm=True, batch_norm_alpha=0.1):
-        super(DeepConvNet_dk, self).__init__()
-        self.batch_norm = batch_norm
-        self.batch_norm_alpha = batch_norm_alpha
-        self.n_classes = n_classes
+class soso(nn.Module):
+    def __init__(self, args, n_subj=None):
+        super(soso, self).__init__()
+        self.device = gpu_checking(args)
+        self.args = args
+        ###
+        if n_subj : self.n_subjs = n_subj
+        ran_channels = 10
+        upsample_initial_channel = 800 # shape 1D
+        ## deepconvnet
         n_ch1 = 25
         n_ch2 = 50
         n_ch3 = 100
-        self.n_ch4 = 200
-
-        if self.batch_norm:
-            self.convnet = nn.Sequential(
-                nn.Conv2d(1, n_ch1, kernel_size=(1, 10), stride=1), # 10 -> 5 # 28 * 741
+        n_ch4 = 200
+        input_ch = self.args.channel_num
+        self.batch_norm=True
+        self.batch_norm_alpha=0.1
+        self.convnet = nn.Sequential(
+                nn.Conv2d(1, n_ch1, kernel_size=(1, 10), stride=1), # 10 -> 5 # 28 * 741 # (10, 247)
                 nn.Conv2d(n_ch1, n_ch1, kernel_size=(input_ch, 1), stride=1, bias=not self.batch_norm),
                 nn.BatchNorm2d(n_ch1,
                                momentum=self.batch_norm_alpha,
@@ -46,116 +56,67 @@ class DeepConvNet_dk(nn.Module):
                 nn.MaxPool2d(kernel_size=(1, 3), stride=(1, 3)),
 
                 nn.Dropout(p=0.5),
-                nn.Conv2d(n_ch3, self.n_ch4, kernel_size=(1, 10), stride=1, bias=not self.batch_norm),
-                nn.BatchNorm2d(self.n_ch4,
+                nn.Conv2d(n_ch3, n_ch4, kernel_size=(1, 10), stride=1, bias=not self.batch_norm),
+                nn.BatchNorm2d(n_ch4,
                                momentum=self.batch_norm_alpha,
                                affine=True,
                                eps=1e-5),
                 nn.ELU(),
                 nn.MaxPool2d(kernel_size=(1, 3), stride=(1, 3)),
                 )
-        else:
-            self.convnet = nn.Sequential(
-                nn.Conv2d(1, n_ch1, kernel_size=(1, 10), stride=1,bias=False),
-                nn.BatchNorm2d(n_ch1,
-                               momentum=self.batch_norm_alpha,
-                               affine=True,
-                               eps=1e-5),
-                nn.Conv2d(n_ch1, n_ch1, kernel_size=(input_ch, 1), stride=1),
-                # nn.InstanceNorm2d(n_ch1),
-                nn.ELU(),
-                nn.MaxPool2d(kernel_size=(1, 2), stride=(1, 2)),
-                nn.Dropout(p=0.5),
-                nn.Conv2d(n_ch1, n_ch2, kernel_size=(1, 10), stride=1),
-                # nn.InstanceNorm2d(n_ch2),
-                nn.ELU(),
-                nn.MaxPool2d(kernel_size=(1, 2), stride=(1, 2)),
-                # nn.Dropout(p=0.5),
-                nn.Conv2d(n_ch2, n_ch3, kernel_size=(1, 10), stride=1),
-                # nn.InstanceNorm2d(n_ch3),
-                nn.ELU(),
-                nn.MaxPool2d(kernel_size=(1, 2), stride=(1, 2)),
-                nn.Dropout(p=0.5),
-                nn.Conv2d(n_ch3, self.n_ch4, kernel_size=(1, 10), stride=1),
-                # nn.InstanceNorm2d(self.n_ch4),
-                nn.ELU(),
-                nn.MaxPool2d(kernel_size=(1, 2), stride=(1, 2)),
-            )
-        self.convnet.eval()
-        out = self.convnet(torch.zeros(1, 1, input_ch, input_time))
-        # out = torch.zeros(1, 1, input_ch, input_time)
-        #
-        # for i, module in enumerate(self.convnet):
-        #     print(module)
-        #     out = module(out)
-        #     print(out.size())
-        #
 
-        n_out_time = out.cpu().data.numpy().shape[3]
-        self.final_conv_length = n_out_time
+        self.embedding = nn.Embedding(self.n_subjs, ran_channels)
+        self.cond = nn.Conv1d(ran_channels, upsample_initial_channel, 1)
+        self.fc = nn.Linear(800, self.args.class_num)
+        self.fc2 = nn.Sequential(nn.Linear(800, self.args.class_num), nn.Sigmoid()) # cat으로 붙이면 840
 
-        self.n_outputs = out.size()[1]*out.size()[2]*out.size()[3]
-
-        ##############기억
-        self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes), nn.Dropout(p=0.2))  ####################### classifier 
-        # self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes))
-        # DG usually doesn't have classifier
-        # so, add at the end
-
-    def forward(self, x):
-        output = self.convnet(x)
-        output = output.view(output.size()[0], -1)
-        # # output = self.l2normalize(output)
-        output=self.clf(output) 
-        return output
-
-    def get_embedding(self, x):
-        return self.forward(x)
-
-    def l2normalize(self, feature):
-        epsilon = 1e-6
-        norm = torch.pow(torch.sum(torch.pow(feature, 2), 1) + epsilon, 0.5).unsqueeze(1).expand_as(feature)
-        return torch.div(feature, norm)
-
-class soso(nn.Module):
-    def __init__(self, args):
-        super(soso, self).__init__()
-        self.device = gpu_checking(args)
-        self.model = DeepConvNet_dk(args.class_num, args.channel_num, args.one_bundle).to(device = self.device) 
+    def forward(self, x, subj=None, embedding = False, fc =  False):
+        x = self.convnet(x).squeeze(2)
         
-        self.dist = args.distance
+        if embedding :
+            subj = subj - 1 # id
+            g = self.embedding(subj).unsqueeze(-1) # [batch, h, 1] [256,10] #[256, 10, 1]
+            if g is not None : 
+                emd = self.cond(g)
+                emd = emd.reshape(x.shape[0], -1, x.shape[2])
+                # x = torch.cat([x, emd], dim=1)
+                x = x + emd
+                x = x.reshape(x.shape[0], -1)
+            if fc : x = self.fc2(x)
+        else :
+            x = x.reshape(x.shape[0], -1) # [256, 800]
+            if fc : x = self.fc(x)
+        return x
 
-        import json
-        with open('rest_prototype.json') as f:
-            prototypes = json.load(f) # 각 subject의 prototypes load
+    # def forward(self, x, subj):
+    #     subj = subj - 1 # id
+    #     g = self.embedding(subj).unsqueeze(-1) # [batch, h, 1] [256,10] #[256, 10, 1]
 
-        self.prototype = list(prototypes.values())
-        mean_proto = self.prototype[0] 
-        for i in self.prototype: mean_proto = np.concatenate((mean_proto, i), axis=0)
-        self.mean_proto = mean_proto.mean(axis=0) # 완전한 mean
+    #     if g is not None : 
+    #         x = self.convnet(x).squeeze(2) + self.cond(g)
+ 
+    #     x = x.reshape(x.shape[0], -1) # [256, 800]
+    #     x = self.fc(x)
+    #     return x
 
-        #model
-        # self.conv = nn.Sequential(nn.Linear(1, 1), nn.Dropout(p=0.2))
+        #######
+        # index_0 = (y==0); index_1 = (y==1); index_2 = (y==2)
         
-    def forward(self, x, y):
-        embeddings = self.model(x.to(device=self.device).float()) # (256, 200, 1, 4) / (batch size, class_num)
-        # print(y)
-        index_0 = (y==0); index_1 = (y==1); index_2 = (y==2)
+        # pdist = nn.PairwiseDistance(p=2)
+        # d_c0 = pdist(embeddings[index_0], torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0))
+        # d_c1 = pdist(embeddings[index_1], torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0))
+        # d_c2 = pdist(embeddings[index_2], torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0))
+        # print("===",torch.mean(d_c0)); print("===",torch.mean(d_c1)); print("===",torch.mean(d_c2))
+        # dis = torch.zeros(embeddings.shape[0], device=self.device)
+        # dis[index_0] = d_c0; dis[index_1] = d_c1; dis[index_2] = d_c2; dis = dis.unsqueeze(dim=0)
         
-        pdist = nn.PairwiseDistance(p=2)
-        d_c0 = pdist(embeddings[index_0], torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0))
-        d_c1 = pdist(embeddings[index_1], torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0))
-        d_c2 = pdist(embeddings[index_2], torch.tensor(self.mean_proto).to(self.device).float().unsqueeze(dim=0))
-        print("===",torch.mean(d_c0)); print("===",torch.mean(d_c1)); print("===",torch.mean(d_c2))
-        dis = torch.zeros(embeddings.shape[0], device=self.device)
-        dis[index_0] = d_c0; dis[index_1] = d_c1; dis[index_2] = d_c2; dis = dis.unsqueeze(dim=0)
+        # dis_normal = F.normalize(dis) # shape : (1, batch_size)
         
-        dis_normal = F.normalize(dis) # shape : (1, batch_size)
-        
+        #######
         # output = self.conv(dis_normal)
         # print(output)
-        return dis_normal
-        raise
+        
+        #######
         # if self.dist == "cosine":
         #     dists = 1 - nn.CosineSimilarity(dim=-1)()
         # else:
@@ -168,5 +129,4 @@ class soso(nn.Module):
 
         # output = pdist(input1, input2)
 
-
-        return output
+        # return output

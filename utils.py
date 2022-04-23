@@ -58,9 +58,81 @@ def get_time() :
         str(current_time.minute).zfill(2)
     return current
 
-class FeatureExtractor():
+class FeatureExtractor() :
     features =  None
-    def __init__(self, m):
+    def __init__(self, m) :
         self.hook = m.register_forward_hook(self.hook_fn)
     def hook_fn(self, module, input, output):
         self.features = output.detach().cpu()
+        self.features_before = input[0].detach().cpu()
+
+def get_meanPrototype(feature=False) :
+    if feature :
+        idx = 1
+        rest_feature = np.load(f"/opt/workspace/xohyun/MS_codes/features_rest(embedding)/original_subj{str(idx).zfill(2)}.npz")
+        X_raw = rest_feature['arr_0']; Y_raw = rest_feature['arr_1']; x_value = X_raw; y_value = Y_raw
+        for idx in range(2, 24):
+            rest_feature = np.load(f"/opt/workspace/xohyun/MS_codes/features_rest(embedding)/original_subj{str(idx).zfill(2)}.npz")
+            X_raw = rest_feature['arr_0']; Y_raw = rest_feature['arr_1']
+            x_value = np.concatenate((x_value, X_raw)); y_value = np.concatenate((y_value, Y_raw)) # 전체 값 모으기
+        mean_proto = x_value.mean(0)
+    else :
+        import json
+        with open('rest_prototype.json') as f:
+            prototypes = json.load(f) # 각 subject의 prototypes load
+
+        prototype = list(prototypes.values())
+        mean_proto = prototype[0] 
+        for i in prototype: mean_proto = np.concatenate((mean_proto, i), axis=0)
+        mean_proto = mean_proto.mean(axis=0) # 완전한 mean
+    return mean_proto
+
+def change_vector(y) :
+    modified_target = [[0 for col in range(3)] for row in range(y.shape[0])]
+    for i, target in enumerate(y) :
+        for j in range(int(target.item()+1)) :
+            modified_target[i][j] = 1
+    return torch.tensor(modified_target)
+
+def drawing_cm(args, cm):
+    import matplotlib.pyplot as plt
+    # title = "dsf"
+    print(len(cm))
+    cmap=plt.cm.Greens
+    plt.figure(figsize=(6, 6))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)  # , cmap=plt.cm.Greens
+    # plt.title(title, size=12)
+    plt.colorbar(fraction=0.05, pad=0.05)
+    if len(cm) == 3:
+        tick_marks = np.arange(3, 3)
+        plt.xticks(np.arange(3), ('0', '1', '2'))
+        plt.yticks(np.arange(3), ('0', '1', '2'))
+    else:
+        tick_marks = np.arange(3, 3)
+        plt.xticks(np.arange(2), ('0', '1'))
+        plt.yticks(np.arange(2), ('0', '1'))
+
+    fmt = 'd' 
+    thresh = 1
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            plt.text(j, i, format(cm[i, j], fmt),
+                    ha="center", va="center", color="white" if cm[i, j] > thresh else "black")  #horizontalalignment
+    create_folder(f"./cm/cm_{args.model}__{args.criterion}")
+    plt.savefig(f"./cm/cm_{args.model}__{args.criterion}/cm_{args.test_subj}")
+    
+
+def memory() :
+    import tracemalloc
+
+    tracemalloc.start()
+
+    # ... run your application ...
+
+    snapshot = tracemalloc.take_snapshot()
+    top_stats = snapshot.statistics('traceback')
+
+    print("[Top 10 ]")
+    for stat in top_stats[:10]:
+        print(stat)
+    raise

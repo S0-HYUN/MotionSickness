@@ -111,7 +111,7 @@ class TrainMaker:
                 
                 # Record history per mini-batch
                 self.record_history(log, self.history_mini_batch, phase='train')
-
+                
             # pred_list_acc = np.concatenate((pred_list_acc, pred_list))
             # print(pred_list_acc)
             
@@ -157,7 +157,7 @@ class TrainMaker:
                         # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
             })
             self.scheduler.step()
-
+        
         return acc, f1, cm, epoch_loss
         # return f1_v, acc_v, cm_v, loss_v
 

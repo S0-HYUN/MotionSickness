@@ -26,7 +26,7 @@ class Args:
             parser.add_argument('--da_lr', type=float, default=1e-4, required=True)
 
         #---# Model #---#
-        parser.add_argument("--model", type=str, default="DeepConvNet", choices=['DeepConvNet', 'ShallowConvNet', 'EEGNet', 'CRL']) #DeepConvNet, ShallowConvNet, EEGNet, CRL
+        parser.add_argument("--model", type=str, default="soso", choices=['DeepConvNet', 'ShallowConvNet', 'EEGNet', 'CRL','soso']) #DeepConvNet, ShallowConvNet, EEGNet, CRL
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
         ### Motion sickness
@@ -35,13 +35,13 @@ class Args:
         
         ### bci competition
         # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic_modi/')
-        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789/') #Files_scale_01_2345_6789+rest
-        parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
-        parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
-        parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
-        parser.add_argument("--save_folder", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
+        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/features_DeepConvNet_MS/') #Files_scale_01_2345_6789+rest
+        parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param_so")
+        parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs_so")
+        parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train_so/")
+        parser.add_argument("--save_folder", type=str, default="/opt/workspace/xohyun/MS_codes/train_so/")
         parser.add_argument("--save_pastfolder", type=str, default="/opt/workspace/xohyun/MS_codes/train_PAST")
-        parser.add_argument("--load_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
+        parser.add_argument("--load_path", type=str, default="/opt/workspace/xohyun/MS_codes/train_so/")
         parser.add_argument("--ft_folder", type=str, default="/opt/workspace/xohyun/MS_codes/train_da/") # for fine-tuning
 
         #---# Train #---#
@@ -135,7 +135,6 @@ class Args:
         # self.args.load_path = os.path.join(save_pth, str(self.args.test_subj))
         # print(f"+++ load_path : [{self.args.load_path}] +++")
     
-
     def get_load_path_DA(self):
         save_pth = os.path.join(self.args.ft_folder, str(self.args.test_subj))
         self.args.load_path = os.path.join(save_pth, str(len(os.listdir(save_pth))))

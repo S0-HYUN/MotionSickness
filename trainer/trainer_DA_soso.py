@@ -73,22 +73,23 @@ class TrainMaker:
             # history_mini_batch = defaultdict(list)
             # f1, acc, cm, loss = self.evaluation(self.data, state="train") # train데이터 eval 끄고 evaluation
             for idx, data in enumerate(data_loader): 
-                x, y = data
+                x, y, subj = data
                
                 true_label = y.numpy()
                 b = x.shape[0]
 
                 self.optimizer.zero_grad() # optimizer 항상 초기화 
-                x = x.reshape(b, 1, self.channel_num, -1) # [1, 1, 25, 750]
+                # x = x.reshape(b, 1, self.channel_num, -1) # [1, 1, 25, 750]
                
-                pred = self.model(x.to(device=self.device).float())
-                pred_prob = F.softmax(pred, dim=-1)
+                # pred = self.model(x.to(device=self.device).float())
+                pred = self.model(x.to(device=self.device).float(), subj.to(device=self.device)); pred = pred.reshape(b, -1) # [256, 200, 4]
+                pred_prob = F.softmax(pred, dim=1)
                 # pred, (hidden_state, cell_state) = network(x.view(b, 1, -1).float().to(device=device), (hidden_state[:,:b].detach().contiguous(), cell_state[:,:b].detach().contiguous())) # view함수 -> 밑에 적음
 
-                # loss = self.criterion(pred_prob, y.flatten().long().to(device=self.device))
                 # loss = torch.norm(pred-y)
-                # loss = self.criterion(pred_prob, y.flatten().float().to(device=self.device)) 
-                loss = self.criterion(pred)
+                loss = self.criterion(pred_prob, y.flatten().long().to(device=self.device)) 
+                
+                # loss = self.criterion(pred)
                 if (idx+1) % interval == 0: print('[Epoch{}, Step({}/{})] Loss:{:.4f}'.format(e+1, idx+1, len(data_loader.dataset) // self.args.batch_size, epoch_loss / (idx + 1)))
 
                 loss.backward()
@@ -96,7 +97,7 @@ class TrainMaker:
                 self.optimizer.step()
                 
                 pred_label = torch.argmax(pred_prob, dim=-1).cpu().numpy()
-                # pred_list.append(pred_label) # pred_list에 prediction 넣어주기
+                # pred_label = pred.detach().cpu().numpy()
 
                 if pred_label_acc is None:
                     pred_label_acc = pred_label
@@ -149,15 +150,15 @@ class TrainMaker:
             self.write_history(self.history_mini_batch)
 
             # f1, acc, cm, loss = self.evaluation(self.data, state="train") # train데이터 eval 끄고 evaluation
-            if self.args.mode == "train":
-                wandb.log({"loss": epoch_loss,
-                            "acc": acc,
-                            "f1":f1,
-                            "vloss": loss_v,
-                            "vacc": acc_v,
-                            "vf1":f1_v,
-                            # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
-                })
+            # if self.args.mode == "train":
+            #     wandb.log({"loss": epoch_loss,
+            #                 "acc": acc,
+            #                 "f1":f1,
+            #                 "vloss": loss_v,
+            #                 "vacc": acc_v,
+            #                 "vf1":f1_v,
+            #                 # "lr": self.optimizer.state_dict().get('param_groups')[0].get("lr")
+            #     })
             if self.args.scheduler != None:
                 self.scheduler.step()
 
@@ -166,6 +167,7 @@ class TrainMaker:
 
     def evaluation(self, data, interval=1000, state=None):
         flag = list(self.model._modules)[-1]
+        
         final_layer = self.model._modules.get(flag)
         activated_features = FeatureExtractor(final_layer) #############################
 
@@ -182,15 +184,17 @@ class TrainMaker:
             
             test_embeds = torch.zeros((0,3))
             for idx, data in enumerate(data_loader):
-                x, y = data
+                x, y, subj = data
                 true_label = y.numpy()
                 b = x.shape[0]
 
-                x = x.reshape(b, 1, self.channel_num, -1)
-                pred = self.model(x.to(device=self.device).float())
+                # x = x.reshape(b, 1, self.channel_num, -1)
+                # pred = self.model(x.to(device=self.device).float())
+                pred = self.model(x.to(device=self.device).float(), subj.to(device=self.device)); pred = pred.reshape(b, -1) # [256, 200, 4]
+                pred_prob = F.softmax(pred, dim=1)
                 
-                # loss = self.criterion(pred, y.flatten().long().to(device=self.device)) # pred.shape
-                loss = self.criterion(pred)
+                loss = self.criterion(pred, y.flatten().long().to(device=self.device)) # pred.shape
+                # loss = self.criterion(pred)
                 valid_loss += loss
                 # if (idx+1) % interval == 0: print('[Epoch, Step({}/{})] Valid Loss:{:.4f}'.format(idx+1, len(data)//self.args.batch_size, loss / (idx +1)))
                 pred_prob = F.softmax(pred, dim=-1)
@@ -230,9 +234,10 @@ class TrainMaker:
             # print(cm)
             
             if self.args.mode == "test":
-                current_time = get_time()
-                create_folder(f"./features_{self.args.model}")
-                np.savez(f"./features_{self.args.model}/{current_time}_original_subj{str(self.args.test_subj).zfill(2)}", test_embeds, true_label_acc)
+                pass
+                # current_time = get_time()
+                # create_folder(f"./features_{self.args.model}")
+                # np.savez(f"./features_{self.args.model}/{current_time}_original_subj{str(self.args.test_subj).zfill(2)}", test_embeds, true_label_acc)
 
         return f1, acc, cm, valid_loss
 
@@ -282,6 +287,8 @@ class TrainMaker:
             criterion = nn.CosineEmbeddingLoss()
         elif criterion == "MDR":
             criterion = MDRLoss(args)
+        elif criterion == "triplet":
+            criterion = nn.TripletMarginLoss()
         else:
             raise
         return criterion

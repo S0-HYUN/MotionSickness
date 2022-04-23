@@ -51,10 +51,12 @@ class Dataset(Dataset) :
 
         self.x = torch.tensor(self.data[0])
         self.y = torch.tensor(self.data[1]).mean(-1)
-        self.subj = torch.tensor(self.data[2]).float().mean(-1)
-    
+        self.subj = torch.tensor(self.data[2]).float()
+        self.subj = self.subj.reshape(-1)
+
+        print(self.x.shape)
         print(self.y.shape)
-        print(self.subj.shape); raise
+        print(self.subj)
         # self.y = torch.tensor(self.data[1])
         # self.y = self.y.reshape(self.y.shape[1])
 
@@ -118,12 +120,12 @@ class Dataset(Dataset) :
         for sub in list_:   
             data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_train.npz")
             o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
-            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(o_list['subj'])
-  
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(np.repeat(o_list['subj'], o_list['x'].shape[0]))
+
             data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 2, str(sub), "_train.npz")
             o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
-            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(o_list['subj'])
-            
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(np.repeat(o_list['subj'], o_list['x'].shape[0]))
+        
         # data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
         # o_list = np.load(args.path + data_name)
         # total_list_x.append(o_list['x']); total_list_y.append(o_list['y'])
@@ -148,7 +150,7 @@ class Dataset(Dataset) :
     
         data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_train.npz")
         o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
-        total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(o_list['subj'])
+        total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(np.repeat(o_list['subj'], o_list['x'].shape[0]))
     
         
         # for sub in list_: ################################################### 이게 최선인가여.. 맘에 안들어.
@@ -161,7 +163,7 @@ class Dataset(Dataset) :
             for d in range(1,3): 
                 data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, d, str(sub), "_train.npz")
                 o_list = np.load(args.path + data_name)
-                total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(o_list['subj'])
+                total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(np.repeat(o_list['subj'], o_list['x'].shape[0]))
         
         return np.vstack(total_list_x), np.vstack(total_list_y), np.vstack(total_list_subj)
 
@@ -186,11 +188,11 @@ class Dataset(Dataset) :
         for sub in list_:  
             data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(sub), "_val.npz")
             o_list = np.load(args.path + data_name) # "subj01_day1_train.npz"
-            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(o_list['subj'])
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(np.repeat(o_list['subj'], o_list['x'].shape[0]))
 
             data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 2, str(sub), "_val.npz")
             o_list = np.load(args.path + data_name) # "subj01_day1_train.npz" 
-            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(o_list['subj'])
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(np.repeat(o_list['subj'], o_list['x'].shape[0]))
 
         # data_name = self.make_name("Split", args.test_size, args.class_num, args.expt, 1, str(args.test_subj), "_val.npz")
         # o_list = np.load(args.path + data_name)
@@ -231,7 +233,7 @@ class Dataset(Dataset) :
 
             data_name = self.make_name("Single", None, args.class_num, args.expt, 2, str(sub), ".npz")
             o_list = np.load(args.path + data_name)
-            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(o_list['subj'])
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(np.repeat(o_list['subj'], o_list['x'].shape[0]))
 
         return np.vstack(total_list_x), np.vstack(total_list_y), np.vstack(total_list_subj)
 
@@ -241,7 +243,7 @@ class Dataset(Dataset) :
             data_name = self.make_name("Single", None, args.class_num, args.expt, 1, str(sub), ".npz")        
             # data_name = self.make_name("Split", 0.5, args.class_num, args.expt, 1, str(sub), "_val.npz")
             o_list = np.load(args.path + data_name)
-            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(o_list['subj'])
+            total_list_x.append(o_list['x']); total_list_y.append(o_list['y']); total_list_subj.append(np.repeat(o_list['subj'], o_list['x'].shape[0]))
         return np.vstack(total_list_x), np.vstack(total_list_y), np.vstack(total_list_subj)
 
     def make_test_da(self, args, list_):

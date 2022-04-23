@@ -1,18 +1,29 @@
-# device=0
-python main.py --device=0 --test_subj=13
-python main.py --device=0 --test_subj=13 --mode=test
+# # device=1
+### soso
+# for var in $(seq 13 18);
+# do 
+#     python main_DA_MS.py --device=2 -sch=cosine --T_max=99 --eta_min=0 --wd=0.001 --lr=0.001 --test_subj $var --standard=acc --model=soso --criterion=quad --batch_size=16
+#     python main_DA_MS.py --device=2 --wd=0.001 --lr=0.001 --test_subj $var --mode=test --standard=acc --model=soso --criterion=quad --batch_size=16
+# done
 
-python main.py --device=0 --test_subj=14
-python main.py --device=0 --test_subj=14 --mode=test
+### DeepConvNet
+# for var in $(seq 17 23);
+# do 
+#     python main_DA_MS.py --device=2 -sch=cosine --T_max=99 --eta_min=0 --wd=0.001 --test_subj $var --standard=acc --model=DeepConvNet --criterion=MSE
+#     python main_DA_MS.py --device=2 --wd=0.001 --test_subj $var --mode=test --standard=acc --model=DeepConvNet --criterion=MSE
+# done
 
-python main.py --device=0 --test_subj=15
-python main.py --device=0 --test_subj=15 --mode=test
+# ### EEGNet
+# for var in $(seq 17 23);
+# do 
+#     python main_DA_MS.py --device=2 -sch=step --step_size=5 --gamma=0.8 --lr=0.01 --wd=0.01 --optimizer=AdamW --test_subj $var --standard=acc --model=EEGNet --criterion=MSE
+#     python main_DA_MS.py --device=2 -sch=step --step_size=5 --gamma=0.8 --lr=0.01 --wd=0.01 --optimizer=AdamW --test_subj $var --standard=acc --model=EEGNet --mode=test --criterion=MSE
+# done
 
-python main.py --device=0 --test_subj=16
-python main.py --device=0 --test_subj=16 --mode=test
 
-python main.py --device=0 --test_subj=17
-python main.py --device=0 --test_subj=17 --mode=test
-
-python main.py --device=0 --test_subj=18
-python main.py --device=0 --test_subj=18 --mode=test
+### ShallowConvNet
+for var in $(seq 13 16);
+do 
+    python main_DA_MS.py --device=2 -sch=cosine --T_max=99 --eta_min=0 --wd=0.001 --test_subj $var --standard=acc --model=ShallowConvNet --criterion=MSE
+    python main_DA_MS.py --device=2 --wd=0.001 --test_subj $var --mode=test --standard=acc --model=ShallowConvNet --criterion=MSE
+done

@@ -70,27 +70,28 @@ class TrainMaker:
             pred_list = None
             true_label = None
             # history_mini_batch = defaultdict(list)
-            f1, acc, cm, loss = self.evaluation(self.data, state="train") # train데이터 eval 끄고 evaluation
+            # f1, acc, cm, loss = self.evaluation(self.data, state="train") # train데이터 eval 끄고 evaluation
             for idx, data in enumerate(data_loader): 
-                x, y = data
-               
+                x, y, subj = data
+
                 true_label = y.numpy()
                 b = x.shape[0]
 
                 self.optimizer.zero_grad() # optimizer 항상 초기화 
                 x = x.reshape(b, 1, self.channel_num, -1) # [1, 1, 25, 750]
                
-                pred = self.model(x.to(device=self.device).float())
-                pred_prob = F.softmax(pred, dim=-1) 
+                pred = self.model(x.to(device=self.device).float(), subj.to(device=self.device)); pred = pred.reshape(b, -1) # [256, 200, 4]
+                # pred = self.model(x.to(device=self.device).float())
+                # pred_prob = F.softmax(pred, dim=-1) 
                 # pred, (hidden_state, cell_state) = network(x.view(b, 1, -1).float().to(device=device), (hidden_state[:,:b].detach().contiguous(), cell_state[:,:b].detach().contiguous())) # view함수 -> 밑에 적음
-                loss = self.criterion(pred_prob, y.flatten().long().to(device=self.device)) 
+                loss = self.criterion(pred, y.flatten().long().to(device=self.device)) 
                 if (idx+1) % interval == 0: print('[Epoch{}, Step({}/{})] Loss:{:.4f}'.format(e+1, idx+1, len(data_loader.dataset) // self.args.batch_size, epoch_loss / (idx + 1)))
 
                 loss.backward()
                 epoch_loss += loss.item()
                 self.optimizer.step()
                 
-                pred_label = torch.argmax(pred_prob, dim=-1).cpu().numpy()
+                pred_label = torch.argmax(pred, dim=-1).cpu().numpy()
                 # pred_list.append(pred_label) # pred_list에 prediction 넣어주기
 
                 if pred_label_acc is None:
@@ -160,7 +161,7 @@ class TrainMaker:
         # return f1_v, acc_v, cm_v, loss_v
 
     def evaluation(self, data, interval=1000, state=None):
-        flag = list(self.model._modules)[-1]
+        flag = list(self.model._modules)[-1] #################
         final_layer = self.model._modules.get(flag)
         activated_features = FeatureExtractor(final_layer) #############################
 
@@ -175,20 +176,21 @@ class TrainMaker:
             true_label = None
             valid_loss = 0
             
-            test_embeds = torch.zeros((0,3))
+            test_embeds = None
             for idx, data in enumerate(data_loader):
-                x, y = data
+                x, y, subj = data
                 true_label = y.numpy()
                 b = x.shape[0]
 
                 x = x.reshape(b, 1, self.channel_num, -1)
-                pred = self.model(x.to(device=self.device).float())
+                pred = self.model(x.to(device=self.device).float(), subj.to(device=self.device)); pred = pred.reshape(b, -1) # [256, 200, 4]
+                # pred = self.model(x.to(device=self.device).float())
                 
                 loss = self.criterion(pred, y.flatten().long().to(device=self.device)) # pred.shape
                 valid_loss += loss
                 # if (idx+1) % interval == 0: print('[Epoch, Step({}/{})] Valid Loss:{:.4f}'.format(idx+1, len(data)//self.args.batch_size, loss / (idx +1)))
-                pred_prob = F.softmax(pred, dim=-1)
-                pred_label = torch.argmax(pred_prob, dim = -1).cpu().numpy()
+                # pred_prob = F.softmax(pred, dim=-1)
+                pred_label = torch.argmax(pred, dim = -1).cpu().numpy()
                 # print(pred_prob)
                 if pred_label_acc is None:
                     pred_label_acc = pred_label
@@ -198,11 +200,10 @@ class TrainMaker:
                     true_label_acc = np.concatenate((true_label_acc, true_label), axis=None)
 
                 #---# for t-sne #---#
-                embeds = torch.mean(activated_features.features, dim=0).view(-1,3)
-
-                embeds = activated_features.features
-                test_embeds = torch.cat((test_embeds, embeds), dim=0)
-
+                embeds = activated_features.features_before # [256, 200, 1, 4]; embeds =  embeds.squeeze(2) # [256, 200, 4]
+                if test_embeds == None: test_embeds = embeds
+                else : test_embeds = torch.cat((test_embeds, embeds), dim=0) # [103, 800]
+            
                 self.cal = Calculate()
                 log = self.cal.calculator(metrics=self.args.metrics, loss=loss, y_true=y, y_pred=pred_label, acc_count=True)
                 
@@ -224,10 +225,12 @@ class TrainMaker:
             # print(cm)
             
             if self.args.mode == "test":
+                # savefeature
                 current_time = get_time()
                 create_folder(f"./features_{self.args.model}")
-                np.savez(f"./features_{self.args.model}/{current_time}_original_subj{str(self.args.test_subj).zfill(2)}", test_embeds, true_label_acc)
-
+                np.savez(f"./features_{self.args.model}/original_subj{str(self.args.test_subj).zfill(2)}", test_embeds, true_label_acc)
+        if state == None:
+            print('{}____{}'.format(acc.item(), valid_loss.item()))
         return f1, acc, cm, valid_loss
 
     def predict_proba(self, data, interval=1000, n_instances=1, mcdo=False, random=False, *query_args, **query_kwargs):
@@ -366,7 +369,7 @@ class TrainMaker:
     def write_history(self, history):
         for metric in history:
             if metric.endswith('acc'):
-                n_samples = self.data.x.shape[0]
+                n_samples = self.data.x[0].shape[0]
                 # n_samples = len(getattr(self.data, f"{metric.split('_')[0]}_loader").dataset.y)
                 self.history[metric].append((sum(history[metric]) / n_samples))
             else:

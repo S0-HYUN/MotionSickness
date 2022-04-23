@@ -3,7 +3,7 @@ from Model.DCAN_models import dcca_eeg
 from Model.DeepConvNet_models import *
 from Model.EEGNet_models import *
 from Model.DCAN_models import *
-from Model.soso_models import soso
+from Model.soso_models2 import soso
 from utils import *
 import pickle
 import importlib
@@ -40,7 +40,7 @@ class ModelMaker:
             elif args.model == 'CRL':
                 model = CRLNet(args.class_num, args.channel_num).to(device = self.device)
             elif args.model == 'soso':
-                model = soso(args)
+                model = soso(args, 23).to(device=self.device)
             write_pickle(os.path.join(args.save_path, f"model_{args.standard}.pk"), model)
 
         elif args.DA == False and args.mode == "test":

@@ -207,7 +207,7 @@ class DeepConvNet_dk(nn.Module):
         self.n_outputs = out.size()[1]*out.size()[2]*out.size()[3]
 
         ##############기억
-        self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes), nn.Dropout(p=0.2))  ####################### classifier 
+        self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes), nn.Dropout(p=0.2), nn.Sigmoid())  ####################### classifier 
         # self.clf = nn.Sequential(nn.Linear(self.n_outputs, self.n_classes))
         # DG usually doesn't have classifier
         # so, add at the end
@@ -216,8 +216,7 @@ class DeepConvNet_dk(nn.Module):
         output = self.convnet(x)
         output = output.view(output.size()[0], -1)
         # output = self.l2normalize(output)
-        output=self.clf(output) 
-
+        output=self.clf(output)
         return output
 
     def get_embedding(self, x):
@@ -273,7 +272,7 @@ class ShallowConvNet_dk(nn.Module):
                                affine=True,
                                eps=1e-5))
         # self.fc = nn.Linear(1760, n_classes)
-        self.fc = nn.Linear(800, n_classes)
+        self.fc = nn.Linear(1760, n_classes)
                                             
     def forward(self, x):
         x = self.layer1(x)

@@ -26,7 +26,7 @@ class Args:
             parser.add_argument('--da_lr', type=float, default=1e-4, required=True)
 
         #---# Model #---#
-        parser.add_argument("--model", type=str, default="DeepConvNet", choices=['DeepConvNet', 'ShallowConvNet', 'EEGNet', 'CRL']) #DeepConvNet, ShallowConvNet, EEGNet, CRL
+        parser.add_argument("--model", type=str, default="soso", choices=['DeepConvNet', 'ShallowConvNet', 'EEGNet', 'CRL', 'soso', 'ODML']) #DeepConvNet, ShallowConvNet, EEGNet, CRL
 
         #---# Path #---# ###### 여기에 안쓰이는 거 있는지 확인
         ### Motion sickness
@@ -35,7 +35,8 @@ class Args:
         
         ### bci competition
         # parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/output_bcic_modi/')
-        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_rest/') #Files_scale_01_2345_6789+rest
+        parser.add_argument("--path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_scale_01_2345_6789_include_subN/') #Files_scale_01_2345_6789+rest
+        parser.add_argument("--rest_path", type=str, default='/opt/workspace/xohyun/MS_codes/Files_rest_include_subN/')
         parser.add_argument("--param_path", type=str, default="/opt/workspace/xohyun/MS_codes/param")
         parser.add_argument("--runs_path", type=str, default="/opt/workspace/xohyun/MS_codes/runs")
         parser.add_argument("--save_path", type=str, default="/opt/workspace/xohyun/MS_codes/train/")
@@ -72,7 +73,7 @@ class Args:
             parser.add_argument('--steps_per_epoch', type=int, default=10) # 증가하는 cycle의 반
             parser.add_argument('--cycle_epochs', type=int, default=10)
 
-        parser.add_argument("--criterion", type=str, default="CEE")
+        parser.add_argument("--criterion", type=str, default="quad") #triplet
         parser.add_argument("--optimizer", type=str, default="AdamW")   # AdamW, SGD
 
         parser.add_argument("--metrics", type=list, default=["loss", "acc"])
@@ -80,14 +81,14 @@ class Args:
         parser.add_argument("--lr", type=float, default=0.001) # 1e-3 #bcic:0.000625
         parser.add_argument("--wd", type=float, default=0.0001) # 1e-3
 
-        parser.add_argument("--batch_size", type=int, default=256)      # 512
+        parser.add_argument("--batch_size", type=int, default=64)      # 512
         parser.add_argument("--epoch", type=int, default=100)          # 3000
         parser.add_argument("--one_bundle", type=int, default=750)     # int(1500/2) / 1125
         parser.add_argument("--channel_num", type=int, default=28)      # 28 / 22
-        parser.add_argument("--class_num", type=int, default=2)
+        parser.add_argument("--class_num", type=int, default=3)
         parser.add_argument("--expt", type=int, default=1, help="1:오전,2:오후")
         if parser.parse_known_args()[0].expt == 1:
-            parser.add_argument("--remove_subj", type=list, default=[1,2,4,14,16,17,19])
+            parser.add_argument("--remove_subj", type=list, default=[]) #1,2,4,14,16,17,19
         else:
             parser.add_argument("--remove_subj", type=list, default=[4,8,11,17]) 
         parser.add_argument("--test_subj", type=int, default=12)
@@ -95,21 +96,26 @@ class Args:
         # parser.add_argument("-")
     
         #---# Device #---#
-        parser.add_argument("--device", default=2, help="cpu or gpu number")
+        parser.add_argument("--device", default=0, help="cpu or gpu number")
+        parser.add_argument("--world_size", type=int, default=4)
+        parser.add_argument("--rank", type=int, default=2)
 
         args = parser.parse_args()
         return args
 
     def set_save_path(self):
-        if len(os.listdir(self.args.save_pastfolder)) == 23: #if os.path.isdir(self.args.save_folder) :
-            if not os.path.isdir(self.args.save_pastfolder) :
-               create_folder(self.args.save_pastfolder)
+        '''
+        작동을 왜 안하는지 모르겠는데, 우선 넘어감
+        '''
+        # if len(os.listdir(self.args.save_pastfolder)) == 23: #if os.path.isdir(self.args.save_folder) :
+        #     if not os.path.isdir(self.args.save_pastfolder) :
+        #        create_folder(self.args.save_pastfolder)
     
-            import shutil
-            des = os.path.join(self.args.save_pastfolder, str(len(os.listdir(self.args.save_pastfolder))+1)); create_folder(des)
-            shutil.move(self.args.save_folder, des)
+        #     import shutil
+        #     des = os.path.join(self.args.save_pastfolder, str(len(os.listdir(self.args.save_pastfolder))+1)); create_folder(des)
+        #     shutil.move(self.args.save_folder, des)
         
-        save_dir = os.path.join(self.args.save_folder, str(self.args.test_subj)); create_folder(save_dir)
+        save_dir = os.path.join(f"{self.args.save_folder}", f"{self.args.model}_{self.args.lr}_{self.args.wd}", f"{str(self.args.test_subj)}"); create_folder(save_dir)
         self.args.save_path = os.path.join(save_dir, str(len(os.listdir(save_dir))+1)); create_folder(self.args.save_path)
         print(f"=== save_path === [{self.args.save_path}]")
         # create_folder(self.args.save_folder)
@@ -127,14 +133,13 @@ class Args:
         # print(f"=== save_path for DA === [{self.args.save_path}]")
 
     def get_load_path(self):
-        save_pth = os.path.join(self.args.load_path, str(self.args.test_subj))
+        save_pth = os.path.join(f"{self.args.load_path}", f"{self.args.model}_{self.args.lr}_{self.args.wd}", f"{str(self.args.test_subj)}")
         self.args.load_path = os.path.join(save_pth, str(len(os.listdir(save_pth))))
         print(f"+++ load_path : [{self.args.load_path}] +++")
         # save_pth = os.path.join(self.args.load_path, str(len(os.listdir(self.args.load_path))))
         # self.args.load_path = os.path.join(save_pth, str(self.args.test_subj))
         # print(f"+++ load_path : [{self.args.load_path}] +++")
     
-
     def get_load_path_DA(self):
         save_pth = os.path.join(self.args.ft_folder, str(self.args.test_subj))
         self.args.load_path = os.path.join(save_pth, str(len(os.listdir(save_pth))))
